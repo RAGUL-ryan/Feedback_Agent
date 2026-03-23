@@ -1,0 +1,164 @@
+========================================
+COMPANY SUPPORT KNOWLEDGE BASE
+========================================
+
+----------------------------------------
+SECTION 1: BILLING & PAYMENTS
+----------------------------------------
+
+Duplicate Charges:
+If a customer reports being charged twice, this is treated as high priority. Ask the customer to provide their order ID or transaction ID. Cross-check with the billing system. If a duplicate charge is confirmed, issue a full refund to the original payment method within 3-5 business days. Send a confirmation email once refund is processed. Escalate to billing team if the duplicate charge occurred more than 7 days ago.
+
+Refund Policy:
+We offer full refunds within 30 days of purchase for all products. After 30 days, partial refunds may be issued at the discretion of the support team. Digital products and subscriptions are refundable within 7 days of purchase or renewal. To initiate a refund, customers should email billing@company.com with their order ID and reason for refund. Refunds are processed within 5-7 business days back to the original payment method.
+
+Subscription Billing:
+Subscriptions are billed automatically on the renewal date each month or year depending on the plan. Customers receive a billing reminder email 7 days before renewal. If a payment fails, the system retries 3 times over 5 days before suspending the account. Customers are notified by email on each failed attempt. To update payment details, go to Account Settings > Billing > Payment Methods.
+
+Cancellation Policy:
+Customers can cancel their subscription at any time from Account Settings > Billing > Cancel Subscription. After cancellation, the account remains active until the end of the current billing period. No partial refunds are issued for the remaining period unless requested within 7 days of the latest charge. Cancellations take effect immediately but access continues until period end.
+
+Invoice Requests:
+Customers can download invoices from Account Settings > Billing > Invoice History. Invoices for the past 24 months are available. For older invoices or custom invoice formats, contact billing@company.com. VAT invoices are available for EU customers upon request.
+
+Payment Methods Accepted:
+We accept Visa, Mastercard, American Express, PayPal, and bank transfers for annual plans. Cryptocurrency payments are not accepted. For enterprise clients, purchase orders and net-30 payment terms are available upon approval.
+
+Pricing and Plans:
+Basic Plan: $9/month — includes up to 3 users, 5GB storage, email support.
+Pro Plan: $29/month — includes up to 10 users, 50GB storage, priority support, API access.
+Enterprise Plan: Custom pricing — unlimited users, unlimited storage, dedicated account manager, SLA guarantee.
+Annual plans receive a 20% discount compared to monthly billing.
+
+----------------------------------------
+SECTION 2: ACCOUNT & ACCESS
+----------------------------------------
+
+Password Reset:
+To reset a password, go to the login page and click "Forgot Password". Enter the registered email address. A reset link will be sent within 5 minutes. The link expires after 24 hours. If the email is not received, check the spam/junk folder. If still not received, contact support@company.com with the account email address.
+
+Account Locked:
+Accounts are locked after 5 consecutive failed login attempts for security. The lockout lasts 30 minutes automatically. To unlock immediately, use the password reset process or contact support@company.com. For enterprise accounts, the admin can unlock user accounts from the Admin Panel > Users.
+
+Two-Factor Authentication (2FA):
+2FA is available and recommended for all accounts. It can be enabled from Account Settings > Security > Enable 2FA. We support authenticator apps (Google Authenticator, Authy) and SMS. If a customer loses access to their 2FA device, they can use backup codes generated at setup. If backup codes are lost, identity verification is required to restore access — contact support@company.com.
+
+Changing Account Email:
+To change the account email, go to Account Settings > Profile > Email Address. A verification email is sent to the new address. The change takes effect after verification. The old email receives a notification. If a customer cannot access the old email, contact support@company.com for manual verification.
+
+Deleting an Account:
+Account deletion is permanent and cannot be undone. All data is deleted within 30 days of the request. To delete an account, go to Account Settings > Privacy > Delete Account. Active subscriptions must be cancelled before deletion. Customers can request a data export before deletion under GDPR rights.
+
+Multiple Users / Team Access:
+Admins can invite team members from Admin Panel > Team > Invite Member. Each plan has a user limit. Users can be assigned roles: Admin, Editor, or Viewer. Admins can revoke access at any time. Enterprise plans support SSO (Single Sign-On) with SAML 2.0.
+
+----------------------------------------
+SECTION 3: TECHNICAL SUPPORT
+----------------------------------------
+
+General Technical Issues:
+For technical issues, first try clearing browser cache and cookies, or try a different browser. Check the system status page at status.company.com for known outages. If the issue persists, collect the following before contacting support: browser name and version, operating system, screenshot of the error, and steps to reproduce. Contact support@company.com or use live chat.
+
+API Issues:
+API documentation is available at docs.company.com/api. Common issues include expired API keys, rate limiting, and incorrect endpoint URLs. API keys can be regenerated from Account Settings > Developer > API Keys. Rate limits are 1000 requests/minute for Pro and 10000 requests/minute for Enterprise. For API-specific issues, email api-support@company.com with the request/response logs.
+
+Integration Issues:
+We support integrations with Slack, Zapier, HubSpot, Salesforce, and Google Workspace. Integration setup guides are at docs.company.com/integrations. If an integration stops working, try disconnecting and reconnecting it. Check that the connected account still has valid permissions. For Zapier issues, check the Zap history for error details.
+
+Mobile App Issues:
+Our mobile app is available for iOS (13+) and Android (8+). If the app crashes, try force-closing and reopening. Ensure the app is updated to the latest version. Clear the app cache from device settings. If issues persist, uninstall and reinstall the app. Report bugs to mobile-support@company.com with device model and OS version.
+
+Data Export:
+Data can be exported from Account Settings > Data > Export. Exports include all user data, content, and activity logs in CSV or JSON format. Large exports may take up to 24 hours to prepare. A download link is sent by email when ready. Enterprise customers can set up automated exports via API.
+
+Performance Issues:
+If the platform is slow, check status.company.com first. Performance issues can be caused by large datasets, complex queries, or peak usage times. For persistent performance issues, contact support with specific details: which page/feature is slow, time of occurrence, and your plan type.
+
+----------------------------------------
+SECTION 4: PRODUCT FEATURES
+----------------------------------------
+
+Dashboard Overview:
+The main dashboard shows a summary of recent activity, key metrics, and quick access to all features. Widgets on the dashboard can be customized by clicking "Customize Dashboard". Each widget can be resized, moved, or removed. New widgets can be added from the Widget Library.
+
+File Storage and Management:
+Files can be uploaded by dragging and dropping into the platform or using the Upload button. Supported formats include PDF, DOCX, XLSX, PNG, JPG, MP4, and ZIP. Maximum file size is 100MB per file. Files can be organized into folders and shared with team members. Deleted files go to Trash and are permanently deleted after 30 days.
+
+Search Functionality:
+The search bar at the top searches across all content including files, notes, and activity. Use filters to narrow results by date, type, or author. Advanced search supports boolean operators (AND, OR, NOT) and exact phrase search using quotes. Search history is saved and can be cleared from Account Settings.
+
+Notifications:
+Notification preferences can be set from Account Settings > Notifications. Options include email, in-app, and push notifications (mobile). Notifications can be configured per event type: new comments, file changes, billing alerts, and system updates. Bulk notification actions are available from the notifications inbox.
+
+Collaboration Features:
+Team members can comment on any file or document. Mentions using @username send direct notifications. Version history is available for documents — click the clock icon to see and restore previous versions. Real-time collaborative editing is available on Pro and Enterprise plans.
+
+----------------------------------------
+SECTION 5: DELIVERY & SHIPPING (Physical Products)
+----------------------------------------
+
+Standard Delivery:
+Standard delivery takes 5-7 business days within the country. International delivery takes 10-15 business days. Tracking information is emailed within 24 hours of dispatch. If tracking is not received after 48 hours of order confirmation, contact orders@company.com.
+
+Express Delivery:
+Express delivery takes 1-2 business days for domestic orders. Express shipping costs $15 for orders under $50 and is free for orders over $50. Express delivery is not available for all regions — eligibility is shown at checkout. Orders placed before 2pm local time are dispatched same day.
+
+Missing or Damaged Deliveries:
+If a package is marked delivered but not received, wait 24 hours as carriers sometimes update tracking early. Check with neighbors and building reception. If still not found after 24 hours, contact orders@company.com with the order ID. For damaged deliveries, take photos and email them to orders@company.com within 48 hours of receipt. A replacement or refund will be issued within 5 business days.
+
+Returns:
+Physical products can be returned within 30 days in original condition and packaging. Return shipping label is provided free of charge for defective items. For non-defective returns, the customer covers return shipping. Refunds are issued within 5-7 business days of receiving the return. Contact returns@company.com to initiate a return.
+
+Order Tracking:
+Orders can be tracked from Account > Orders > Track Order. A tracking link is also included in the dispatch confirmation email. Tracking updates in real-time once the carrier scans the package. For bulk or enterprise orders, a dedicated tracking dashboard is available.
+
+----------------------------------------
+SECTION 6: PRIVACY & SECURITY
+----------------------------------------
+
+Data Privacy:
+We are fully GDPR compliant. Customer data is stored in encrypted form on servers located in the EU and US. We do not sell personal data to third parties. Data is used only to provide and improve our services. Customers can request a copy of their data or request deletion at any time by emailing privacy@company.com.
+
+Security Incidents:
+If a customer suspects their account has been compromised, they should immediately reset their password and revoke all active sessions from Account Settings > Security > Active Sessions. Contact security@company.com urgently. Our security team responds to incident reports within 2 hours during business hours.
+
+GDPR Requests:
+Customers in the EU have the right to access, correct, port, and delete their data. Requests are processed within 30 days. Submit GDPR requests to privacy@company.com with proof of identity. For enterprise customers, GDPR requests are handled through the designated Data Protection Officer.
+
+Cookies Policy:
+We use essential cookies for authentication and preferences, and optional cookies for analytics. Customers can manage cookie preferences from the cookie banner or from Account Settings > Privacy > Cookie Preferences. Opting out of analytics cookies does not affect platform functionality.
+
+----------------------------------------
+SECTION 7: ENTERPRISE & BUSINESS
+----------------------------------------
+
+Enterprise Onboarding:
+Enterprise customers receive a dedicated onboarding manager. Onboarding includes platform setup, SSO configuration, data migration assistance, and team training. Onboarding typically takes 2-4 weeks depending on complexity. Contact enterprise@company.com or your account manager to start onboarding.
+
+SLA (Service Level Agreement):
+Enterprise plans include a 99.9% uptime SLA. In case of SLA breaches, customers receive service credits. Planned maintenance is communicated at least 48 hours in advance via email and status.company.com. Emergency maintenance is communicated as soon as possible.
+
+Custom Integrations:
+Enterprise customers can request custom integrations with their existing tools. Our professional services team provides custom development. Pricing is based on scope and complexity. Contact enterprise@company.com to discuss requirements.
+
+Compliance Certifications:
+We hold SOC 2 Type II, ISO 27001, and GDPR compliance certifications. Documentation is available upon request for enterprise due diligence. Contact compliance@company.com.
+
+----------------------------------------
+SECTION 8: COMMON COMPLAINTS & RESOLUTIONS
+----------------------------------------
+
+Customer charged but no access to product:
+This usually happens due to a payment processing delay. Ask the customer to log out and log back in. If access is still not granted within 1 hour of payment, escalate to billing@company.com with the transaction ID. Access should be granted manually within 2 hours.
+
+Feature not working as expected:
+Gather details: what feature, what behavior expected vs actual, steps to reproduce, browser/device. Check if it's a known issue on status.company.com. If not, create a bug report internally and give the customer a ticket number. Follow up within 24 hours with a status update.
+
+Customer wants to downgrade plan:
+Downgrades take effect at the next renewal date. Data that exceeds the lower plan's limits is not deleted but becomes inaccessible until the customer reduces usage or upgrades again. Explain this to the customer before processing the downgrade. Downgrade from Account Settings > Billing > Change Plan.
+
+Customer unhappy with product:
+Listen empathetically, acknowledge their frustration, and ask clarifying questions to understand the specific pain point. Offer relevant documentation, a demo session, or escalate to the customer success team. If appropriate, offer a free trial extension or discount as a goodwill gesture. Never promise features that don't exist.
+
+Long wait times for support:
+Apologize for the wait. Provide an estimated response time. Offer self-service resources: help.company.com, docs.company.com, and community.company.com. If the customer's issue is urgent, flag it for priority handling.

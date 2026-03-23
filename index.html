@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Feedback Agent Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { background: white; border-radius: 16px; padding: 40px; width: 680px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 6px; color: #1a1a1a; }
+    p.sub { color: #666; font-size: 14px; margin-bottom: 28px; }
+    textarea { width: 100%; height: 120px; border: 1.5px solid #ddd; border-radius: 10px; padding: 14px; font-size: 15px; resize: none; outline: none; transition: border 0.2s; }
+    textarea:focus { border-color: #6c63ff; }
+    button { margin-top: 14px; width: 100%; padding: 14px; background: #6c63ff; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #574fd6; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .result { margin-top: 28px; display: none; }
+    .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+    .badge.escalated { background: #ffe4e4; color: #c0392b; }
+    .badge.replied { background: #e4f9ef; color: #1a7a4a; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { background: #f8f8ff; border: 1px solid #ececff; border-radius: 10px; padding: 16px; }
+    .card h3 { font-size: 12px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .card p { font-size: 15px; font-weight: 500; color: #1a1a1a; text-transform: capitalize; }
+    .reply-box { margin-top: 12px; background: #f0fff6; border: 1px solid #b2f0d0; border-radius: 10px; padding: 16px; }
+    .reply-box h3 { font-size: 12px; text-transform: uppercase; color: #1a7a4a; margin-bottom: 8px; }
+    .reply-box p { font-size: 15px; color: #1a1a1a; line-height: 1.6; }
+    .escalation-box { margin-top: 12px; background: #fff5f5; border: 1px solid #ffc0c0; border-radius: 10px; padding: 16px; }
+    .escalation-box h3 { font-size: 12px; text-transform: uppercase; color: #c0392b; margin-bottom: 8px; }
+    .escalation-box p { font-size: 15px; color: #1a1a1a; line-height: 1.6; }
+    .loader { text-align: center; padding: 20px; color: #6c63ff; font-size: 15px; display: none; }
+    .samples { margin-bottom: 16px; }
+    .samples p { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .sample-btn { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 14px; background: #f0eeff; color: #6c63ff; border: 1px solid #d4d0ff; border-radius: 20px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+    .sample-btn:hover { background: #e0dcff; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Feedback Agent</h1>
+  <p class="sub">AI-powered feedback analysis and routing system</p>
+
+  <div class="samples">
+    <p>Try a sample:</p>
+    <span class="sample-btn" onclick="setSample(this)">I was charged twice this month</span>
+    <span class="sample-btn" onclick="setSample(this)">Your product is absolutely amazing!</span>
+    <span class="sample-btn" onclick="setSample(this)">How do I reset my password?</span>
+    <span class="sample-btn" onclick="setSample(this)">The app keeps crashing on login</span>
+  </div>
+
+  <textarea id="feedback" placeholder="Type customer feedback here..."></textarea>
+  <button id="btn" onclick="analyze()">Analyze Feedback</button>
+
+  <div class="loader" id="loader">Analyzing feedback through agent pipeline...</div>
+
+  <div class="result" id="result">
+    <span class="badge" id="badge"></span>
+    <div class="cards" id="cards"></div>
+    <div id="output-box"></div>
+  </div>
+</div>
+
+<script>
+  function setSample(el) {
+    document.getElementById("feedback").value = el.innerText;
+  }
+
+  async function analyze() {
+    const feedback = document.getElementById("feedback").value.trim();
+    if (!feedback) return alert("Please enter some feedback first.");
+
+    document.getElementById("btn").disabled = true;
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("result").style.display = "none";
+
+    try {
+      const res = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback })
+      });
+      const data = await res.json();
+      showResult(data);
+    } catch (e) {
+      alert("Error connecting to backend. Make sure the server is running.");
+    }
+
+    document.getElementById("btn").disabled = false;
+    document.getElementById("loader").style.display = "none";
+  }
+
+  function showResult(data) {
+    const result = document.getElementById("result");
+    const badge = document.getElementById("badge");
+    const cards = document.getElementById("cards");
+    const outputBox = document.getElementById("output-box");
+
+    result.style.display = "block";
+
+    if (data.status === "escalated") {
+      badge.textContent = "Escalated to Human Team";
+      badge.className = "badge escalated";
+      const c = data.case;
+      cards.innerHTML = `
+        <div class="card"><h3>Sentiment</h3><p>${c.sentiment}</p></div>
+        <div class="card"><h3>Intent</h3><p>${c.intent}</p></div>
+        <div class="card"><h3>Assigned To</h3><p>${c.assigned_to}</p></div>
+        <div class="card"><h3>Reason</h3><p>${c.reason}</p></div>
+      `;
+      outputBox.innerHTML = `
+        <div class="escalation-box">
+          <h3>Escalation Details</h3>
+          <p>${c.feedback}</p>
+        </div>`;
+    } else {
+      badge.textContent = "Auto-Replied";
+      badge.className = "badge replied";
+      cards.innerHTML = `
+        <div class="card"><h3>Sentiment</h3><p>${data.sentiment || "—"}</p></div>
+        <div class="card"><h3>Status</h3><p>${data.status}</p></div>
+      `;
+      outputBox.innerHTML = `
+        <div class="reply-box">
+          <h3>Generated Reply</h3>
+          <p>${data.response}</p>
+        </div>`;
+    }
+  }
+</script>
+</body>
+</html>

@@ -12,53 +12,72 @@ def run_feedback_pipeline(raw_feedback: str):
     # 1. Ingest + clean
     ingested = ingest(raw_feedback)
     cleaned = ingested.get("cleaned_text", raw_feedback)
-    print(f"[Ingestion] {cleaned}")
+    detected_type = ingested.get("detected_type", "text")
+    emoji_sentiment = ingested.get("emoji_sentiment", "neutral")
+    print(f"[Ingestion] Type={detected_type} | {cleaned}")
 
     # 2. Understand
     analysis = understand(cleaned)
+    human_readable = analysis.get("human_readable", cleaned)
+    emoji_detected = analysis.get("emoji_detected", False)
     print(f"[Understanding] {analysis}")
 
-    # 3. Fetch context via RAG
+    # 3. RAG Context
     context = get_context(cleaned)
     print(f"[Context] Retrieved {len(context)} chars from knowledge base")
 
-    # 4. Decide routing
+    # 4. Decide
     route = decide(analysis)
     print(f"[Decision] Route → {route}")
 
     if route == "respond":
-        # 5a. Generate response
-        reply = generate_response(cleaned, analysis, context)
+        reply = generate_response(
+            feedback=cleaned,
+            analysis=analysis,
+            context=context,
+            original_input=raw_feedback,
+            human_readable=human_readable
+        )
         print(f"[Response] {reply}")
-
-        # 6. Learn from outcome
         learn(cleaned, reply, outcome="auto_resolved")
         return {
             "status": "replied",
             "response": reply,
             "understanding": analysis,
-            "cleaned_text": cleaned
+            "cleaned_text": cleaned,
+            "original_input": raw_feedback,
+            "detected_type": detected_type,
+            "emoji_detected": emoji_detected,
+            "human_readable": human_readable,
+            "emoji_sentiment": emoji_sentiment
         }
-
     else:
-        # 5b. Escalate
         case = escalate(cleaned, analysis)
-        case["sentiment"] = analysis.get("sentiment")
-        case["intent"] = analysis.get("intent")
-        case["topic"] = analysis.get("topic")
-        case["urgency"] = analysis.get("urgency")
-        case["confidence"] = analysis.get("confidence")
+        case["topic"] = analysis.get("topic", "general")
+        case["urgency"] = analysis.get("urgency", "medium")
+        case["confidence"] = analysis.get("confidence", 0.5)
         return {
             "status": "escalated",
             "case": case,
             "understanding": analysis,
-            "cleaned_text": cleaned
+            "cleaned_text": cleaned,
+            "original_input": raw_feedback,
+            "detected_type": detected_type,
+            "emoji_detected": emoji_detected,
+            "human_readable": human_readable,
+            "emoji_sentiment": emoji_sentiment
         }
 
-
 if __name__ == "__main__":
-    # Test it
-    sample = "I've been charged twice for my subscription this month and no one is helping me!"
-    result = run_feedback_pipeline(sample)
-    print("\n== RESULT ==")
-    print(result)
+    tests = [
+        "😡😡 charged twice!!",
+        "❤️🌟🌟🌟🌟🌟 love this app",
+        "🤔 how do I reset password?",
+        "🐛💥 app crashes on login",
+        "⭐⭐ very disappointed with delivery"
+    ]
+    for t in tests:
+        result = run_feedback_pipeline(t)
+        print(f"\nInput: {t}")
+        print(f"Readable: {result['human_readable']}")
+        print(f"Status: {result['status']}\n")

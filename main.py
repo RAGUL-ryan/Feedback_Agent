@@ -2,6 +2,7 @@ from agents.ingestion_agent import ingest
 from agents.understanding_agent import understand
 from agents.context_agent import get_context
 from agents.decision_agent import decide
+from agents.edge_case_agent import apply_edge_case_rules
 from agents.response_agent import generate_response
 from agents.escalation_agent import escalate
 from agents.learning_agent import learn
@@ -18,6 +19,7 @@ def run_feedback_pipeline(raw_feedback: str):
 
     # 2. Understand
     analysis = understand(cleaned)
+    analysis = apply_edge_case_rules(raw_feedback, cleaned, analysis)
     human_readable = analysis.get("human_readable", cleaned)
     emoji_detected = analysis.get("emoji_detected", False)
     print(f"[Understanding] {analysis}")

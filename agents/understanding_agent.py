@@ -15,8 +15,6 @@ Emoji interpretation:
 😊❤️👍🌟😍 → positive, praise, low urgency
 🤔❓🧐 → neutral, question, low urgency
 🐛💥🔥❌ → negative, bug_report, high urgency
-💰💳🧾 → billing topic
-🚀⚡🐢 → product/performance topic
 👎 → negative, complaint
 👏🙌 → positive, praise
 ⭐ count: 1=very negative, 2=negative, 3=neutral, 4=positive, 5=very positive

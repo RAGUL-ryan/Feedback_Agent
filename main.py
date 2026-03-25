@@ -25,7 +25,7 @@ def run_feedback_pipeline(raw_feedback: str):
     print(f"[Understanding] {analysis}")
 
     # 3. RAG Context
-    context = get_context(cleaned)
+    context = get_context(human_readable or cleaned)
     print(f"[Context] Retrieved {len(context)} chars from knowledge base")
 
     # 4. Decide

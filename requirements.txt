@@ -4,3 +4,8 @@ langchain-community
 chromadb
 openai
 python-dotenv
+fastapi
+uvicorn
+langchain-groq
+langchain-huggingface
+gTTS

@@ -6,9 +6,11 @@ def escalate(feedback: str, understanding: dict) -> dict:
     case = {
         "status": "escalated",
         "feedback": feedback,
-        "reason": f"Urgency={understanding.get('urgency')}, Confidence={understanding.get('confidence')}",
+        "reason": understanding.get("review_reason") or f"Urgency={understanding.get('urgency')}, Severity={understanding.get('severity')}, Confidence={understanding.get('confidence')}",
         "intent": understanding.get("intent"),
         "sentiment": understanding.get("sentiment"),
+        "severity": understanding.get("severity"),
+        "urgency": understanding.get("urgency"),
         "assigned_to": "human_support_team"
     }
     # TODO: plug in tools/notification.py here for real alerts

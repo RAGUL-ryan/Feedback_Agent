@@ -8,4 +8,5 @@ fastapi
 uvicorn
 langchain-groq
 langchain-huggingface
+pypdf
 gTTS

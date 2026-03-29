@@ -10,3 +10,4 @@ langchain-groq
 langchain-huggingface
 pypdf
 gTTS
+deep-translator

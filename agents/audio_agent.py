@@ -3,8 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Optional
 
-from config import GTTS_LANGUAGE
-from config import GTTS_TLD
+from config import GTTS_LANGUAGE, GTTS_TLD
 
 
 def gtts_available() -> bool:
@@ -15,7 +14,11 @@ def gtts_available() -> bool:
     return True
 
 
-def synthesize_gtts(text: str) -> Optional[bytes]:
+def synthesize_gtts(
+    text: str,
+    lang: str | None = None,
+    tld: str | None = None,
+) -> Optional[bytes]:
     if not text or not text.strip():
         return None
 
@@ -24,10 +27,14 @@ def synthesize_gtts(text: str) -> Optional[bytes]:
     except ImportError:
         return None
 
+    effective_lang = lang or GTTS_LANGUAGE
+    effective_tld = tld or GTTS_TLD
+
     try:
         audio_buffer = BytesIO()
-        tts = gTTS(text=text.strip(), lang=GTTS_LANGUAGE, tld=GTTS_TLD)
+        tts = gTTS(text=text.strip(), lang=effective_lang, tld=effective_tld)
         tts.write_to_fp(audio_buffer)
         return audio_buffer.getvalue() or None
-    except Exception:
+    except Exception as exc:
+        print(f"[AUDIO] gTTS error (lang={effective_lang}, tld={effective_tld}): {exc}")
         return None

@@ -22,6 +22,7 @@ class FeedbackRequest(BaseModel):
     input_mode: str | None = None
     voice_transcript: bool = False
     language: str = "en"          # "en" | "ta" | "hi" | "te"
+    sector: str | None = None     # "fintech" | "education" | "healthcare" | "food" | "ecommerce"
 
 
 class TTSRequest(BaseModel):
@@ -43,7 +44,11 @@ def get_languages():
 @app.post("/analyze")
 def analyze(request: FeedbackRequest):
     lang = request.language if request.language in supported_language_codes() else "en"
-    result = run_feedback_pipeline(request.feedback, target_language=lang)
+    result = run_feedback_pipeline(
+        request.feedback,
+        target_language=lang,
+        sector=request.sector,
+    )
     result["input_mode"] = request.input_mode or "text"
     result["voice_transcript"] = request.voice_transcript
     result["audio_supported"] = gtts_available()

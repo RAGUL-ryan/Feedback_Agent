@@ -4,6 +4,16 @@
   "chunk_overlap": 200,
   "files": [
     {
+      "path": "Education/education_feedback_reviews_mixed.pdf",
+      "size": 18193,
+      "mtime_ns": 1775451108738384900
+    },
+    {
+      "path": "Education/NEP_Final_English_0.pdf",
+      "size": 1453912,
+      "mtime_ns": 1775451064810954000
+    },
+    {
       "path": "faq.txt",
       "size": 15054,
       "mtime_ns": 1774507362376002400
@@ -102,6 +112,36 @@
       "path": "Fintech/Commercial_Banking/Untitled document (9).pdf",
       "size": 371763,
       "mtime_ns": 1774689008748339100
+    },
+    {
+      "path": "Fintech/Fintech_Companies/bajaj_finserv.pdf",
+      "size": 59966,
+      "mtime_ns": 1775455856791677800
+    },
+    {
+      "path": "Fintech/Fintech_Companies/gpay_reviews_v3_merged.pdf",
+      "size": 29689,
+      "mtime_ns": 1775455856801349400
+    },
+    {
+      "path": "Fintech/Fintech_Companies/Paytm_Reviews_merged.pdf",
+      "size": 56009,
+      "mtime_ns": 1775455856810782000
+    },
+    {
+      "path": "Fintech/Fintech_Companies/phonepe.pdf",
+      "size": 56513,
+      "mtime_ns": 1775455856816803600
+    },
+    {
+      "path": "Fintech/Fintech_Companies/upstox.pdf",
+      "size": 17405,
+      "mtime_ns": 1775455856822828600
+    },
+    {
+      "path": "Food/final_with_all_terms.pdf",
+      "size": 138878,
+      "mtime_ns": 1775456571786832800
     }
   ]
 }

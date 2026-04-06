@@ -11,3 +11,4 @@ langchain-huggingface
 pypdf
 gTTS
 deep-translator
+langsmith

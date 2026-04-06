@@ -125,6 +125,19 @@
   <h1>Feedback Agent</h1>
   <p class="sub">AI-powered feedback analysis with multilingual response support.</p>
 
+  <!-- ── Sector selector ────────────────────────────────── -->
+  <div class="lang-row" style="margin-bottom:10px;">
+    <label for="sector-select">Platform type:</label>
+    <select class="lang-select" id="sector-select" onchange="onSectorChange()" style="background-color:#f0f8ff; border-color:#a0c4ff;">
+      <option value="fintech">🏦 Fintech / Banking</option>
+      <option value="education">🎓 Education</option>
+      <option value="healthcare">🏥 Healthcare</option>
+      <option value="food">🍔 Restaurant</option>
+      <option value="ecommerce">🛒 E-Commerce</option>
+    </select>
+    <span class="lang-hint" id="sector-hint" style="color:#5b8dee;">Fintech: billing, transfers, security, app issues</span>
+  </div>
+
   <!-- ── Language selector ──────────────────────────────── -->
   <div class="lang-row">
     <label for="lang-select">Response language:</label>
@@ -147,14 +160,8 @@
   <!-- TEXT tab -->
   <div class="input-section active" id="tab-text">
     <div class="samples">
-      <div class="samples-label">English samples</div>
-      <div class="chips" id="chips-en">
-        <span class="chip" onclick="setChip(this)">I was charged twice this month</span>
-        <span class="chip" onclick="setChip(this)">Your product is absolutely amazing!</span>
-        <span class="chip" onclick="setChip(this)">How do I reset my password?</span>
-        <span class="chip" onclick="setChip(this)">The app keeps crashing on login</span>
-        <span class="chip" onclick="setChip(this)">lol great job, app crashed again</span>
-      </div>
+      <div class="samples-label">Sample feedback</div>
+      <div class="chips" id="chips-en"></div>
       <!-- Tanglish samples — shown only when Tamil is selected -->
       <div id="tanglish-samples" style="display:none; margin-top:10px;">
         <div class="samples-label" style="color:#795548;">✦ Tanglish samples (Tamil in English letters)</div>
@@ -259,6 +266,7 @@
   let currentAudioUrl = null;
   let currentReplyEN = "";
   let currentLang = "en";
+  let currentSector = "fintech";
 
   const starLabels = ["","Very dissatisfied","Dissatisfied","Neutral","Satisfied","Very satisfied"];
   const langHints = {
@@ -267,6 +275,33 @@
     hi: "Type in English — reply will be in Hindi (हिन्दी).",
     te: "Type in English — reply will be in Telugu (తెలుగు).",
   };
+
+  const sectorData = {
+    fintech:    { hint: "Fintech: billing, transfers, UPI, loans, security, app issues", samples: ["I was charged twice this month","The app keeps crashing on login","Someone else logged into my account","How do I reset my UPI PIN?","Great app, transfers work perfectly!"] },
+    education:  { hint: "Education: courses, instructors, videos, fees, certificates", samples: ["The video won't load on my course","I paid fees but can't access the course","The instructor explains very well!","When will I get my completion certificate?","App crashes every time I open a quiz"] },
+    healthcare: { hint: "Healthcare: appointments, doctors, billing, test reports", samples: ["I was overcharged for my consultation","The doctor was very helpful and patient","My test report hasn't arrived yet","App crashes when I try to book an appointment","I need to reschedule my appointment urgently"] },
+    food:       { hint: "Food: delivery, quality, wrong order, app, promo codes", samples: ["I found a foreign object in my food","Delivery was 45 mins late and food was cold","Wrong item delivered, I ordered pasta not pizza","My promo code didn't apply at checkout","Best food ever, delivery was super fast!"] },
+    ecommerce:  { hint: "E-Commerce: products, delivery, returns, refunds, seller", samples: ["I received a damaged product","My order hasn't arrived in 10 days","Refund not processed after 2 weeks","The product looks nothing like the photos","Super fast delivery, excellent quality!"] },
+  };
+
+  function onSectorChange() {
+    currentSector = document.getElementById("sector-select").value;
+    const info = sectorData[currentSector] || sectorData.fintech;
+    document.getElementById("sector-hint").textContent = info.hint;
+    renderSampleChips();
+    document.getElementById("result").style.display = "none";
+  }
+
+  function renderSampleChips() {
+    const info = sectorData[currentSector] || sectorData.fintech;
+    const container = document.getElementById("chips-en");
+    container.innerHTML = info.samples.map(s =>
+      `<span class="chip" onclick="setChip(this)">${s}</span>`
+    ).join("");
+  }
+
+  // Initialize chips on load
+  window.addEventListener("DOMContentLoaded", () => { renderSampleChips(); });
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognition) {
@@ -366,14 +401,15 @@
     if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); currentAudioUrl = null; }
 
     try {
-      const res = await fetch("http://localhost:8000/analyze", {
+      const res = await fetch("/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           feedback,
           input_mode: currentTab,
           voice_transcript: currentTab === "text" && voiceUsed,
-          language: currentLang
+          language: currentLang,
+          sector: currentSector
         })
       });
       const data = await res.json();
@@ -419,11 +455,14 @@
     }
 
     // Analysis cards
+    const sectorLabel = (understanding.sector || currentSector || "fintech").toUpperCase();
     document.getElementById("cards").innerHTML = `
       <div class="card"><h3>Sentiment</h3><p>${understanding.sentiment || "-"}</p></div>
       <div class="card"><h3>Intent</h3><p>${understanding.intent || "-"}</p></div>
-      <div class="card"><h3>Topic</h3><p>${understanding.topic || "-"}</p></div>
+      <div class="card"><h3>Topic</h3><p>${(understanding.topic || "-").replace(/_/g, " ")}</p></div>
       <div class="card"><h3>Urgency</h3><p>${understanding.urgency || "-"}</p></div>
+      <div class="card"><h3>Severity</h3><p>${understanding.severity || "-"}</p></div>
+      <div class="card"><h3>Sector</h3><p>${sectorLabel}</p></div>
     `;
 
     // Badge
@@ -483,7 +522,7 @@
     button.disabled = true;
     status.textContent = "Generating audio...";
     try {
-      const res = await fetch("http://localhost:8000/tts", {
+      const res = await fetch("/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: replyText, language: currentLang })

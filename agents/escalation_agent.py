@@ -1,12 +1,11 @@
 """
-agents/escalation_agent.py
+agents/escalation_agent.py  (replace your existing escalation_agent.py)
 ─────────────────────────────────────────────────────────────────────────────
-Escalation packaging agent.
-
-v3 changes:
-  • Sector-aware system prompt — handoff note uses domain-appropriate language
-    (e.g. "patient" for healthcare, "order" for ecommerce, "transaction" for fintech)
-  • escalate() accepts optional `sector` param; falls back to config.SECTOR
+v5 changes (Approach 2 — authenticated users):
+  • escalate() accepts customer_name, customer_email, customer_phone
+  • Passes customer details to crm_agent (Contact linked to ticket)
+  • Passes customer details to email_agent (auto escalation email sent)
+  • All external calls wrapped in try/except — nothing crashes the pipeline
 """
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -35,7 +34,7 @@ Rules:
   • Under 60 words.
   • Clear, professional English sentences — no bullet points.
   • Do not mention AI confidence scores or internal system labels.
-  • Use domain-appropriate language for {sector} (e.g. "patient" not "customer" for healthcare)."""
+  • Use domain-appropriate language for {sector}."""
 
 _HUMAN = """Customer feedback: {feedback}
 Intent: {intent} | Topic: {topic} | Severity: {severity} | Urgency: {urgency}
@@ -46,7 +45,14 @@ Summary: {human_readable}
 Write the handoff note:"""
 
 
-def escalate(feedback: str, understanding: dict, sector: str | None = None) -> dict:
+def escalate(
+    feedback: str,
+    understanding: dict,
+    sector: str | None = None,
+    customer_name: str = "Unknown",
+    customer_email: str = "",
+    customer_phone: str = "",
+) -> dict:
     effective_sector = (sector or understanding.get("sector") or SECTOR or "fintech").lower()
     sector_role = _SECTOR_ROLE.get(effective_sector, "customer support team")
 
@@ -60,32 +66,69 @@ def escalate(feedback: str, understanding: dict, sector: str | None = None) -> d
     prompt = ChatPromptTemplate.from_messages([("system", system_msg), ("human", _HUMAN)])
 
     handoff_note = (prompt | _llm).invoke({
-        "feedback": feedback,
-        "intent": understanding.get("intent", "unknown"),
-        "topic": understanding.get("topic", "general"),
-        "severity": understanding.get("severity", "unknown"),
-        "urgency": understanding.get("urgency", "unknown"),
-        "reason": reason,
-        "edge_cases": ", ".join(edge_cases) if edge_cases else "none",
+        "feedback":       feedback,
+        "intent":         understanding.get("intent", "unknown"),
+        "topic":          understanding.get("topic", "general"),
+        "severity":       understanding.get("severity", "unknown"),
+        "urgency":        understanding.get("urgency", "unknown"),
+        "reason":         reason,
+        "edge_cases":     ", ".join(edge_cases) if edge_cases else "none",
         "human_readable": understanding.get("human_readable", feedback),
     }).content.strip()
 
     case = {
-        "status": "escalated",
-        "feedback": feedback,
-        "handoff_note": handoff_note,
-        "reason": reason,
-        "intent": understanding.get("intent"),
-        "sentiment": understanding.get("sentiment"),
-        "topic": understanding.get("topic", "general"),
-        "severity": understanding.get("severity"),
-        "urgency": understanding.get("urgency"),
-        "confidence": understanding.get("confidence"),
-        "edge_cases": edge_cases,
-        "sector": effective_sector,
-        "assigned_to": "human_support_team",
+        "status":          "escalated",
+        "feedback":        feedback,
+        "handoff_note":    handoff_note,
+        "reason":          reason,
+        "intent":          understanding.get("intent"),
+        "sentiment":       understanding.get("sentiment"),
+        "topic":           understanding.get("topic", "general"),
+        "severity":        understanding.get("severity"),
+        "urgency":         understanding.get("urgency"),
+        "confidence":      understanding.get("confidence"),
+        "edge_cases":      edge_cases,
+        "sector":          effective_sector,
+        "assigned_to":     "human_support_team",
+        "customer_name":   customer_name,
+        "customer_email":  customer_email,
     }
 
     print(f"[ESCALATION] {handoff_note}")
-    # TODO: plug in tools/notification.py → Slack / Zendesk / Jira
+
+    # ── CRM: create ticket + contact in HubSpot ───────────────────────────
+    try:
+        from agents.crm_agent import create_ticket
+        crm_result = create_ticket(
+            feedback       = feedback,
+            analysis       = {**understanding, "sector": effective_sector},
+            status         = "escalated",
+            handoff_note   = handoff_note,
+            customer_name  = customer_name,
+            customer_email = customer_email,
+            customer_phone = customer_phone,
+        )
+        case["crm_ticket_id"]  = crm_result.get("ticket_id")
+        case["crm_ticket_url"] = crm_result.get("ticket_url")
+        case["crm_status"]     = crm_result.get("crm_status")
+    except Exception as exc:
+        print(f"[CRM] Failed (non-fatal): {exc}")
+        case["crm_ticket_id"]  = None
+        case["crm_ticket_url"] = None
+        case["crm_status"]     = "error"
+
+    # ── Email: notify customer that their case was escalated ──────────────
+    try:
+        from agents.email_agent import send_escalation_email
+        if customer_email:
+            send_escalation_email(
+                customer_email = customer_email,
+                customer_name  = customer_name,
+                ticket_id      = case.get("crm_ticket_id") or "N/A",
+                feedback       = feedback,
+                sector         = effective_sector,
+            )
+    except Exception as exc:
+        print(f"[EMAIL] Failed (non-fatal): {exc}")
+
     return case

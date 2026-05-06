@@ -7,540 +7,515 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Segoe UI", sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .container { background: white; border-radius: 16px; padding: 36px; width: min(720px, 100%); box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-    h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+    .page { display: none; }
+    .page.active { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 100vh; }
+
+    /* ── Auth card ──────────────────────────────────────────── */
+    .auth-card { background: white; border-radius: 16px; padding: 40px 36px; width: min(440px, 100%); box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .auth-card h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+    .auth-card .sub { color: #888; font-size: 14px; margin-bottom: 28px; }
+    .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #eee; }
+    .auth-tab { flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; color: #aaa; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
+    .auth-tab.active { color: #6c63ff; border-bottom-color: #6c63ff; }
+    .auth-form { display: none; flex-direction: column; gap: 14px; }
+    .auth-form.active { display: flex; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; transition: border .2s; }
+    .field input:focus { border-color: #6c63ff; }
+    .auth-btn { padding: 12px; background: #6c63ff; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .auth-btn:hover { background: #574fd6; }
+    .auth-btn:disabled { background: #bbb; cursor: not-allowed; }
+    .auth-error { background: #ffe4e4; color: #c0392b; border-radius: 8px; padding: 10px 14px; font-size: 13px; display: none; }
+    .auth-error.show { display: block; }
+
+    /* ── Main app ───────────────────────────────────────────── */
+    .app-wrap { width: min(720px, 100%); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #6c63ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+    .user-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .user-email { font-size: 12px; color: #888; }
+    .logout-btn { font-size: 13px; color: #6c63ff; background: none; border: 1.5px solid #d4d0ff; border-radius: 20px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+    .logout-btn:hover { background: #f0eeff; }
+    .container { background: white; border-radius: 16px; padding: 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    h1.main { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
     p.sub { color: #666; font-size: 14px; margin-bottom: 20px; }
 
-    /* ── Language selector ─────────────────────────────── */
+    /* ── Language selector ──────────────────────────────────── */
     .lang-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-    .lang-row label { font-size: 13px; font-weight: 600; color: #444; white-space: nowrap; }
-    .lang-select {
-      appearance: none; -webkit-appearance: none;
-      border: 1.5px solid #d4d0ff; border-radius: 20px;
-      padding: 6px 32px 6px 14px; font-size: 13px;
-      background: #f6f4ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236c63ff' d='M6 8 0 0h12z'/%3E%3C/svg%3E") no-repeat right 12px center;
-      color: #333; cursor: pointer; outline: none;
-    }
+    .lang-row label { font-size: 13px; font-weight: 600; color: #444; }
+    .lang-select { appearance: none; border: 1.5px solid #d4d0ff; border-radius: 20px; padding: 6px 32px 6px 14px; font-size: 13px; background: #f6f4ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236c63ff' d='M6 8 0 0h12z'/%3E%3C/svg%3E") no-repeat right 12px center; color: #333; cursor: pointer; outline: none; }
     .lang-select:focus { border-color: #6c63ff; }
-    .lang-hint { font-size: 12px; color: #888; }
-    .tanglish-badge {
-      display: none; align-items: center; gap: 5px;
-      background: #fff8e1; border: 1px solid #ffe082; border-radius: 16px;
-      padding: 4px 10px; font-size: 12px; color: #795548;
-    }
-    .tanglish-badge.show { display: inline-flex; }
 
-    /* ── Tabs ──────────────────────────────────────────── */
+    /* ── Tabs ───────────────────────────────────────────────── */
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .tab { padding: 7px 18px; border-radius: 20px; border: 1.5px solid #e0e0e0; font-size: 13px; cursor: pointer; background: white; color: #666; transition: all 0.2s; }
     .tab.active { background: #6c63ff; color: white; border-color: #6c63ff; }
     .input-section { display: none; }
     .input-section.active { display: block; }
-
     textarea { width: 100%; height: 110px; border: 1.5px solid #ddd; border-radius: 10px; padding: 14px; font-size: 16px; resize: none; outline: none; transition: border 0.2s; }
     textarea:focus { border-color: #6c63ff; }
 
-    /* ── Voice ─────────────────────────────────────────── */
-    .voice-tools { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; gap: 10px; }
-    .voice-btn { width: 44px; height: 44px; border-radius: 999px; border: 1px solid #d4d0ff; background: #f6f4ff; color: #574fd6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s; }
-    .voice-btn:hover { transform: scale(1.05); }
-    .voice-btn.recording { background: #ffe8e8; color: #bf2f45; border-color: #ffb6c1; }
-    .voice-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .voice-btn svg { width: 20px; height: 20px; fill: currentColor; }
-    .voice-status { font-size: 12px; color: #574fd6; min-height: 16px; margin-bottom: 10px; }
-
-    /* ── Emoji ─────────────────────────────────────────── */
+    /* ── Emoji ──────────────────────────────────────────────── */
     .emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px; background: #f8f8ff; border: 1.5px solid #e8e4ff; border-radius: 10px; margin-bottom: 10px; }
     .emoji-btn { font-size: 26px; cursor: pointer; padding: 6px 8px; border-radius: 8px; border: 2px solid transparent; background: transparent; transition: all 0.15s; }
     .emoji-btn:hover { background: #e8e4ff; transform: scale(1.15); }
     .emoji-preview { min-height: 44px; padding: 10px 14px; background: #f0eeff; border-radius: 8px; font-size: 22px; letter-spacing: 4px; margin-bottom: 10px; color: #333; }
-    .emoji-preview span { font-size: 13px; color: #888; vertical-align: middle; }
 
-    /* ── Star rating ───────────────────────────────────── */
+    /* ── Star rating ────────────────────────────────────────── */
     .star-row { display: flex; justify-content: center; gap: 12px; padding: 20px 0 10px; }
     .star { font-size: 38px; cursor: pointer; color: #ddd; transition: all 0.15s; }
     .star.active { color: #f5a623; }
-    .star:hover { transform: scale(1.2); }
     .star-label { text-align: center; font-size: 14px; color: #888; margin-bottom: 10px; min-height: 20px; }
 
-    /* ── Sample chips ──────────────────────────────────── */
+    /* ── Sample chips ───────────────────────────────────────── */
     .samples { margin-bottom: 14px; }
     .samples-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { padding: 5px 12px; background: #f0eeff; color: #6c63ff; border: 1px solid #d4d0ff; border-radius: 16px; font-size: 12px; cursor: pointer; }
     .chip:hover { background: #e0dcff; }
-    .chip.tanglish { background: #fff8e1; color: #795548; border-color: #ffe082; }
-    .chip.tanglish:hover { background: #fff3cd; }
 
-    /* ── Submit / loader ───────────────────────────────── */
+    /* ── Submit / loader ────────────────────────────────────── */
     button.submit { margin-top: 12px; width: 100%; padding: 14px; background: #6c63ff; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     button.submit:hover { background: #574fd6; }
     button.submit:disabled { background: #bbb; cursor: not-allowed; }
     .loader { text-align: center; padding: 20px; color: #6c63ff; font-size: 14px; display: none; }
     .dots::after { content: "..."; animation: dots 1.2s steps(3, end) infinite; }
-    @keyframes dots { 0%, 100% { content: "."; } 33% { content: ".."; } 66% { content: "..."; } }
+    @keyframes dots { 0%,100%{content:"."} 33%{content:".."} 66%{content:"..."} }
 
-    /* ── Result ────────────────────────────────────────── */
+    /* ── Result ─────────────────────────────────────────────── */
     .result { margin-top: 24px; display: none; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
     .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
     .badge.escalated { background: #ffe4e4; color: #c0392b; }
     .badge.replied { background: #e4f9ef; color: #1a7a4a; }
+    .badge.rejected { background: #fff3e0; color: #e65100; }
     .input-badge { padding: 4px 12px; border-radius: 14px; font-size: 12px; background: #f0eeff; color: #6c63ff; }
-    .lang-badge { padding: 4px 10px; border-radius: 14px; font-size: 12px; background: #fff8e1; color: #7a5200; border: 1px solid #ffe082; }
-    .tanglish-result-badge { padding: 4px 10px; border-radius: 14px; font-size: 12px; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-    .interpretation { background: #fffbea; border: 1px solid #ffe08a; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 14px; color: #7a5c00; }
     .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .card { background: #f8f8ff; border: 1px solid #ececff; border-radius: 10px; padding: 14px; }
     .card h3 { font-size: 11px; text-transform: uppercase; color: #aaa; letter-spacing: 0.5px; margin-bottom: 5px; }
     .card p { font-size: 15px; font-weight: 500; color: #1a1a1a; text-transform: capitalize; }
-
-    /* ── Reply box ─────────────────────────────────────── */
-    .reply-box { background: #f0fff6; border: 1px solid #b2f0d0; border-radius: 10px; padding: 16px; }
-    .reply-box h3 { font-size: 11px; text-transform: uppercase; color: #1a7a4a; margin-bottom: 8px; }
-    .reply-translated { font-size: 16px; color: #1a1a1a; line-height: 1.75; margin-bottom: 12px; font-weight: 500; }
-    .reply-en { font-size: 13px; color: #666; line-height: 1.6; border-top: 1px solid #d0eedd; padding-top: 10px; display: none; }
-    .reply-en.show { display: block; }
-    .show-en-btn { font-size: 12px; color: #1a7a4a; background: none; border: none; cursor: pointer; text-decoration: underline; margin-bottom: 8px; }
-    .audio-tools { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-    .audio-btn { padding: 10px 14px; border-radius: 10px; border: 1px solid #b2f0d0; background: white; color: #1a7a4a; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .audio-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .audio-status { font-size: 12px; color: #666; }
-
-    /* ── Escalation box ────────────────────────────────── */
-    .escalation-box { background: #fff5f5; border: 1px solid #ffc0c0; border-radius: 10px; padding: 16px; }
-    .escalation-box h3 { font-size: 11px; text-transform: uppercase; color: #c0392b; margin-bottom: 8px; }
-    .escalation-box p { font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 6px; }
-    .escalation-msg { font-size: 15px; color: #555; margin-top: 10px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #ffd5d5; line-height: 1.6; }
-
-    @media (max-width: 640px) {
-      .container { padding: 24px; }
-      .cards { grid-template-columns: 1fr; }
-    }
+    .reply-box { background: #f0fff6; border: 1px solid #b2f0d0; border-radius: 10px; padding: 16px; font-size: 15px; line-height: 1.7; color: #1a1a1a; }
+    .escalate-box { background: #fff5f5; border: 1px solid #ffcccc; border-radius: 10px; padding: 16px; font-size: 15px; line-height: 1.7; color: #1a1a1a; }
+    .crm-link { display: inline-block; margin-top: 10px; font-size: 13px; color: #6c63ff; text-decoration: none; }
+    .crm-link:hover { text-decoration: underline; }
+    .email-notice { margin-top: 10px; font-size: 13px; color: #1a7a4a; background: #e4f9ef; padding: 8px 12px; border-radius: 8px; }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>Feedback Agent</h1>
-  <p class="sub">AI-powered feedback analysis with multilingual response support.</p>
 
-  <!-- ── Sector selector ────────────────────────────────── -->
-  <div class="lang-row" style="margin-bottom:10px;">
-    <label for="sector-select">Platform type:</label>
-    <select class="lang-select" id="sector-select" onchange="onSectorChange()" style="background-color:#f0f8ff; border-color:#a0c4ff;">
-      <option value="fintech">🏦 Fintech / Banking</option>
-      <option value="education">🎓 Education</option>
-      <option value="healthcare">🏥 Healthcare</option>
-      <option value="food">🍔 Restaurant</option>
-      <option value="ecommerce">🛒 E-Commerce</option>
-    </select>
-    <span class="lang-hint" id="sector-hint" style="color:#5b8dee;">Fintech: billing, transfers, security, app issues</span>
+<!-- ══════════════ AUTH PAGE ══════════════ -->
+<div id="auth-page" class="page active">
+  <div class="auth-card">
+    <h1>Feedback Agent</h1>
+    <p class="sub">Sign in to submit and track your feedback</p>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Create Account</div>
+    </div>
+
+    <div id="auth-error" class="auth-error"></div>
+
+    <!-- Login form -->
+    <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" required/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Your password" required/>
+      </div>
+      <button type="submit" class="auth-btn" id="login-btn">Sign In</button>
+    </form>
+
+    <!-- Register form -->
+    <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" id="reg-name" placeholder="Arjun Kumar" required/>
+      </div>
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" required/>
+      </div>
+      <div class="field">
+        <label>Phone number <span style="color:#aaa;font-weight:400">(optional)</span></label>
+        <input type="tel" id="reg-phone" placeholder="+91 98765 43210"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Min 6 characters" minlength="6" required/>
+      </div>
+      <button type="submit" class="auth-btn" id="register-btn">Create Account</button>
+    </form>
   </div>
+</div>
 
-  <!-- ── Language selector ──────────────────────────────── -->
-  <div class="lang-row">
-    <label for="lang-select">Response language:</label>
-    <select class="lang-select" id="lang-select" onchange="onLanguageChange()">
-      <option value="en">🇬🇧 English</option>
-      <option value="ta">🇮🇳 Tamil (தமிழ்)</option>
-      <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
-      <option value="te">🇮🇳 Telugu (తెలుగు)</option>
-    </select>
-    <span class="lang-hint" id="lang-hint">Type in English — reply will be in English.</span>
-  </div>
+<!-- ══════════════ MAIN APP PAGE ══════════════ -->
+<div id="app-page" class="page">
+  <div class="app-wrap">
 
-  <!-- ── Input tabs ─────────────────────────────────────── -->
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('text', this)">Text</button>
-    <button class="tab" onclick="switchTab('emoji', this)">Emoji</button>
-    <button class="tab" onclick="switchTab('rating', this)">Star Rating</button>
-  </div>
+    <!-- Top bar with user info -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="avatar" id="avatar-initials">?</div>
+        <div>
+          <div class="user-name" id="topbar-name">—</div>
+          <div class="user-email" id="topbar-email">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
 
-  <!-- TEXT tab -->
-  <div class="input-section active" id="tab-text">
-    <div class="samples">
-      <div class="samples-label">Sample feedback</div>
-      <div class="chips" id="chips-en"></div>
-      <!-- Tanglish samples — shown only when Tamil is selected -->
-      <div id="tanglish-samples" style="display:none; margin-top:10px;">
-        <div class="samples-label" style="color:#795548;">✦ Tanglish samples (Tamil in English letters)</div>
-        <div class="chips">
-          <span class="chip tanglish" onclick="setChip(this)">app romba mosam, work agala</span>
-          <span class="chip tanglish" onclick="setChip(this)">charge pannitanga twice, help pannga</span>
-          <span class="chip tanglish" onclick="setChip(this)">password maranthutten, reset pannanum</span>
-          <span class="chip tanglish" onclick="setChip(this)">romba nalla app, super da</span>
-          <span class="chip tanglish" onclick="setChip(this)">delivery late aaguthu, theriyala epdi track panrathu</span>
+    <div class="container">
+      <h1 class="main">Submit Your Feedback</h1>
+      <p class="sub">Tell us about your experience — we respond instantly</p>
+
+      <!-- Language selector -->
+      <div class="lang-row">
+        <label>Reply in:</label>
+        <select class="lang-select" id="lang-select">
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <!-- Sector selector -->
+      <div class="lang-row">
+        <label>Department:</label>
+        <select class="lang-select" id="sector-select">
+          <option value="fintech">Fintech / Banking</option>
+          <option value="education">Education</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="food">Food Delivery</option>
+          <option value="ecommerce">E-commerce</option>
+        </select>
+      </div>
+
+      <!-- Input tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('text',this)">Text</button>
+        <button class="tab" onclick="switchTab('emoji',this)">Emoji</button>
+        <button class="tab" onclick="switchTab('rating',this)">Star Rating</button>
+      </div>
+
+      <!-- Text input -->
+      <div class="input-section active" id="tab-text">
+        <div class="samples">
+          <div class="samples-label">Try an example</div>
+          <div class="chips">
+            <span class="chip" onclick="setFeedback('I was charged twice this month')">Charged twice</span>
+            <span class="chip" onclick="setFeedback('How do I reset my password?')">Password reset</span>
+            <span class="chip" onclick="setFeedback('Someone else logged into my account')">Account breach</span>
+            <span class="chip" onclick="setFeedback('Your app is absolutely amazing!')">Positive praise</span>
+            <span class="chip" onclick="setFeedback('app romba mosam, work agala')">Tanglish</span>
+          </div>
+        </div>
+        <textarea id="text-input" placeholder="Type your feedback here..."></textarea>
+      </div>
+
+      <!-- Emoji input -->
+      <div class="input-section" id="tab-emoji">
+        <div class="emoji-grid">
+          <button class="emoji-btn" onclick="addEmoji('😡')">😡</button>
+          <button class="emoji-btn" onclick="addEmoji('😤')">😤</button>
+          <button class="emoji-btn" onclick="addEmoji('😢')">😢</button>
+          <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
+          <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
+          <button class="emoji-btn" onclick="addEmoji('👍')">👍</button>
+          <button class="emoji-btn" onclick="addEmoji('👎')">👎</button>
+          <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
+          <button class="emoji-btn" onclick="addEmoji('💳')">💳</button>
+          <button class="emoji-btn" onclick="addEmoji('🐛')">🐛</button>
+          <button class="emoji-btn" onclick="addEmoji('⭐')">⭐</button>
+          <button class="emoji-btn" onclick="addEmoji('🙌')">🙌</button>
+        </div>
+        <div class="emoji-preview" id="emoji-preview"><span style="color:#bbb;font-size:13px">Tap emojis above...</span></div>
+        <button onclick="clearEmoji()" style="font-size:12px;color:#888;background:none;border:none;cursor:pointer;margin-bottom:10px">Clear</button>
+      </div>
+
+      <!-- Star rating input -->
+      <div class="input-section" id="tab-rating">
+        <div class="star-row">
+          <span class="star" onclick="setStar(1)">★</span>
+          <span class="star" onclick="setStar(2)">★</span>
+          <span class="star" onclick="setStar(3)">★</span>
+          <span class="star" onclick="setStar(4)">★</span>
+          <span class="star" onclick="setStar(5)">★</span>
+        </div>
+        <div class="star-label" id="star-label">Tap a star to rate</div>
+      </div>
+
+      <button class="submit" id="submit-btn" onclick="submitFeedback()">Send Feedback</button>
+      <div class="loader" id="loader">Analysing your feedback<span class="dots"></span></div>
+
+      <!-- Result section -->
+      <div class="result" id="result">
+        <div class="result-header">
+          <span class="badge" id="result-badge">—</span>
+          <span class="input-badge" id="input-badge">text</span>
+        </div>
+        <div class="cards">
+          <div class="card"><h3>Intent</h3><p id="r-intent">—</p></div>
+          <div class="card"><h3>Sentiment</h3><p id="r-sentiment">—</p></div>
+          <div class="card"><h3>Urgency</h3><p id="r-urgency">—</p></div>
+          <div class="card"><h3>Topic</h3><p id="r-topic">—</p></div>
+        </div>
+        <div id="r-response-box"></div>
+        <div id="r-email-notice" class="email-notice" style="display:none">
+          📧 A confirmation email has been sent to your registered email address.
         </div>
       </div>
     </div>
-    <div class="voice-tools">
-      <button class="voice-btn" id="voice-btn" type="button" onclick="toggleVoiceInput()" aria-label="Start voice input" title="Start voice input">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.92V20h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-2.08A7 7 0 0 1 5 11a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
-        </svg>
-      </button>
-    </div>
-    <div class="voice-status" id="voice-status">Voice input ready.</div>
-    <textarea id="text-input" placeholder="Type your feedback here... (English or Tanglish)"></textarea>
-  </div>
-
-  <!-- EMOJI tab -->
-  <div class="input-section" id="tab-emoji">
-    <div class="samples">
-      <div class="samples-label">Quick emoji combos</div>
-      <div class="chips">
-        <span class="chip" onclick="setEmojiCombo('😡😡💢')">😡 Very angry</span>
-        <span class="chip" onclick="setEmojiCombo('❤️🌟😍')">❤️ Love it</span>
-        <span class="chip" onclick="setEmojiCombo('🤔❓')">🤔 Confused</span>
-        <span class="chip" onclick="setEmojiCombo('🐛💥❌')">🐛 Bug report</span>
-        <span class="chip" onclick="setEmojiCombo('💰💳😤')">💰 Billing issue</span>
-        <span class="chip" onclick="setEmojiCombo('👏🙌✨')">👏 Impressed</span>
-      </div>
-    </div>
-    <div class="emoji-grid">
-      <button class="emoji-btn" onclick="addEmoji('😡')">😡</button>
-      <button class="emoji-btn" onclick="addEmoji('😤')">😤</button>
-      <button class="emoji-btn" onclick="addEmoji('🤬')">🤬</button>
-      <button class="emoji-btn" onclick="addEmoji('💢')">💢</button>
-      <button class="emoji-btn" onclick="addEmoji('😢')">😢</button>
-      <button class="emoji-btn" onclick="addEmoji('💔')">💔</button>
-      <button class="emoji-btn" onclick="addEmoji('😞')">😞</button>
-      <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
-      <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
-      <button class="emoji-btn" onclick="addEmoji('👍')">👍</button>
-      <button class="emoji-btn" onclick="addEmoji('🌟')">🌟</button>
-      <button class="emoji-btn" onclick="addEmoji('😍')">😍</button>
-      <button class="emoji-btn" onclick="addEmoji('✨')">✨</button>
-      <button class="emoji-btn" onclick="addEmoji('👏')">👏</button>
-      <button class="emoji-btn" onclick="addEmoji('🙌')">🙌</button>
-      <button class="emoji-btn" onclick="addEmoji('🤔')">🤔</button>
-      <button class="emoji-btn" onclick="addEmoji('❓')">❓</button>
-      <button class="emoji-btn" onclick="addEmoji('🐛')">🐛</button>
-      <button class="emoji-btn" onclick="addEmoji('💥')">💥</button>
-      <button class="emoji-btn" onclick="addEmoji('❌')">❌</button>
-      <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
-      <button class="emoji-btn" onclick="addEmoji('👎')">👎</button>
-    </div>
-    <div class="emoji-preview" id="emoji-preview"><span>Click emojis above to build your feedback</span></div>
-    <button onclick="clearEmoji()" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;margin-bottom:8px;">Clear</button>
-  </div>
-
-  <!-- RATING tab -->
-  <div class="input-section" id="tab-rating">
-    <div class="star-row" id="star-row">
-      <span class="star" onclick="setRating(1)">★</span>
-      <span class="star" onclick="setRating(2)">★</span>
-      <span class="star" onclick="setRating(3)">★</span>
-      <span class="star" onclick="setRating(4)">★</span>
-      <span class="star" onclick="setRating(5)">★</span>
-    </div>
-    <div class="star-label" id="star-label">Click a star to rate</div>
-    <textarea id="rating-comment" placeholder="Optional: add a comment with your rating..." style="margin-top:10px; height:80px;"></textarea>
-  </div>
-
-  <button class="submit" id="btn" onclick="analyze()">Analyze Feedback</button>
-  <div class="loader" id="loader">Analyzing through agent pipeline<span class="dots"></span></div>
-
-  <!-- ── Result ──────────────────────────────────────────── -->
-  <div class="result" id="result">
-    <div class="result-header">
-      <span class="badge" id="badge"></span>
-      <span class="input-badge" id="input-type-badge"></span>
-      <span class="lang-badge" id="lang-badge" style="display:none;"></span>
-      <span class="tanglish-result-badge" id="tanglish-result-badge" style="display:none;">🔤 Tanglish detected</span>
-    </div>
-    <div class="interpretation" id="interpretation" style="display:none;"></div>
-    <div class="cards" id="cards"></div>
-    <div id="output-box"></div>
   </div>
 </div>
 
 <script>
-  let currentTab = "text";
-  let selectedEmojis = "";
-  let selectedRating = 0;
-  let voiceActive = false;
-  let voiceUsed = false;
-  let recognition = null;
-  let currentAudioUrl = null;
-  let currentReplyEN = "";
-  let currentLang = "en";
-  let currentSector = "fintech";
+// ── State ────────────────────────────────────────────────────────────────────
+let currentTab  = 'text';
+let emojiStr    = '';
+let starVal     = 0;
+let currentUser = null;
+let authToken   = null;
 
-  const starLabels = ["","Very dissatisfied","Dissatisfied","Neutral","Satisfied","Very satisfied"];
-  const langHints = {
-    en: "Type in English — reply will be in English.",
-    ta: "Type in English or Tanglish — reply will be in Tamil (தமிழ்).",
-    hi: "Type in English — reply will be in Hindi (हिन्दी).",
-    te: "Type in English — reply will be in Telugu (తెలుగు).",
-  };
+const API = '';  // empty = same origin
 
-  const sectorData = {
-    fintech:    { hint: "Fintech: billing, transfers, UPI, loans, security, app issues", samples: ["I was charged twice this month","The app keeps crashing on login","Someone else logged into my account","How do I reset my UPI PIN?","Great app, transfers work perfectly!"] },
-    education:  { hint: "Education: courses, instructors, videos, fees, certificates", samples: ["The video won't load on my course","I paid fees but can't access the course","The instructor explains very well!","When will I get my completion certificate?","App crashes every time I open a quiz"] },
-    healthcare: { hint: "Healthcare: appointments, doctors, billing, test reports", samples: ["I was overcharged for my consultation","The doctor was very helpful and patient","My test report hasn't arrived yet","App crashes when I try to book an appointment","I need to reschedule my appointment urgently"] },
-    food:       { hint: "Food: delivery, quality, wrong order, app, promo codes", samples: ["I found a foreign object in my food","Delivery was 45 mins late and food was cold","Wrong item delivered, I ordered pasta not pizza","My promo code didn't apply at checkout","Best food ever, delivery was super fast!"] },
-    ecommerce:  { hint: "E-Commerce: products, delivery, returns, refunds, seller", samples: ["I received a damaged product","My order hasn't arrived in 10 days","Refund not processed after 2 weeks","The product looks nothing like the photos","Super fast delivery, excellent quality!"] },
-  };
+// ── Auth helpers ─────────────────────────────────────────────────────────────
+function saveAuth(token, user) {
+  authToken   = token;
+  currentUser = user;
+  localStorage.setItem('fb_token', token);
+  localStorage.setItem('fb_user',  JSON.stringify(user));
+}
 
-  function onSectorChange() {
-    currentSector = document.getElementById("sector-select").value;
-    const info = sectorData[currentSector] || sectorData.fintech;
-    document.getElementById("sector-hint").textContent = info.hint;
-    renderSampleChips();
-    document.getElementById("result").style.display = "none";
-  }
+function loadAuth() {
+  const t = localStorage.getItem('fb_token');
+  const u = localStorage.getItem('fb_user');
+  if (t && u) { authToken = t; currentUser = JSON.parse(u); return true; }
+  return false;
+}
 
-  function renderSampleChips() {
-    const info = sectorData[currentSector] || sectorData.fintech;
-    const container = document.getElementById("chips-en");
-    container.innerHTML = info.samples.map(s =>
-      `<span class="chip" onclick="setChip(this)">${s}</span>`
-    ).join("");
-  }
+function logout() {
+  localStorage.removeItem('fb_token');
+  localStorage.removeItem('fb_user');
+  authToken = null; currentUser = null;
+  showPage('auth');
+}
 
-  // Initialize chips on load
-  window.addEventListener("DOMContentLoaded", () => { renderSampleChips(); });
+// ── Pages ────────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(name + '-page').classList.add('active');
+}
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onstart = () => {
-      voiceActive = true;
-      const btn = document.getElementById("voice-btn");
-      btn.classList.add("recording");
-      btn.setAttribute("aria-label", "Stop voice input");
-      document.getElementById("voice-status").textContent = "Listening. Speak your feedback naturally.";
-    };
-    recognition.onresult = (event) => {
-      let transcript = "";
-      for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript + " ";
-      transcript = transcript.trim();
-      document.getElementById("text-input").value = transcript;
-      voiceUsed = transcript.length > 0;
-      document.getElementById("voice-status").textContent = "Transcript captured. Review and edit if needed.";
-    };
-    recognition.onerror = (event) => {
-      voiceActive = false;
-      document.getElementById("voice-btn").classList.remove("recording");
-      document.getElementById("voice-status").textContent = `Voice error: ${event.error}`;
-    };
-    recognition.onend = () => {
-      voiceActive = false;
-      document.getElementById("voice-btn").classList.remove("recording");
-      if (voiceUsed) document.getElementById("voice-status").textContent = "Voice input finished.";
-    };
-  } else {
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("voice-btn").disabled = true;
-      document.getElementById("voice-status").textContent = "Voice input not supported in this browser.";
+function showAppPage() {
+  const initials = (currentUser.full_name || '?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('avatar-initials').textContent = initials;
+  document.getElementById('topbar-name').textContent     = currentUser.full_name;
+  document.getElementById('topbar-email').textContent    = currentUser.email;
+  showPage('app');
+  loadLanguages();
+}
+
+// ── Auth tab switch ───────────────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('login-form').classList.toggle('active',    tab==='login');
+  document.getElementById('register-form').classList.toggle('active', tab==='register');
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+// ── Login ────────────────────────────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  document.getElementById('auth-error').classList.remove('show');
+
+  try {
+    const resp = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email:    document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      }),
     });
+    const data = await resp.json();
+    if (!resp.ok) { showAuthError(data.detail || 'Login failed.'); return; }
+    saveAuth(data.access_token, data.user);
+    showAppPage();
+  } catch { showAuthError('Network error. Is the server running?'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+// ── Register ─────────────────────────────────────────────────────────────────
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('register-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  document.getElementById('auth-error').classList.remove('show');
+
+  try {
+    const resp = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        full_name: document.getElementById('reg-name').value,
+        email:     document.getElementById('reg-email').value,
+        phone:     document.getElementById('reg-phone').value || null,
+        password:  document.getElementById('reg-password').value,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { showAuthError(data.detail || 'Registration failed.'); return; }
+    saveAuth(data.access_token, data.user);
+    showAppPage();
+  } catch { showAuthError('Network error. Is the server running?'); }
+  finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+}
+
+// ── Languages ────────────────────────────────────────────────────────────────
+async function loadLanguages() {
+  try {
+    const resp = await fetch(`${API}/languages`);
+    const data = await resp.json();
+    const sel  = document.getElementById('lang-select');
+    sel.innerHTML = '';
+    const names = {en:'English',ta:'Tamil',hi:'Hindi',te:'Telugu'};
+    data.languages.forEach(l => {
+      const o = document.createElement('option');
+      o.value = l; o.textContent = names[l] || l;
+      sel.appendChild(o);
+    });
+  } catch {}
+}
+
+// ── Input helpers ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.input-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function setFeedback(text) { document.getElementById('text-input').value = text; }
+function addEmoji(e) {
+  emojiStr += e;
+  const p = document.getElementById('emoji-preview');
+  p.innerHTML = emojiStr || '<span style="color:#bbb;font-size:13px">Tap emojis above...</span>';
+}
+function clearEmoji() {
+  emojiStr = '';
+  document.getElementById('emoji-preview').innerHTML = '<span style="color:#bbb;font-size:13px">Tap emojis above...</span>';
+}
+
+const starLabels = ['','Very Bad','Bad','Okay','Good','Excellent'];
+function setStar(n) {
+  starVal = n;
+  document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('active', i < n));
+  document.getElementById('star-label').textContent = starLabels[n];
+}
+
+function getFeedbackText() {
+  if (currentTab === 'text')   return document.getElementById('text-input').value.trim();
+  if (currentTab === 'emoji')  return emojiStr;
+  if (currentTab === 'rating') return starVal ? '⭐'.repeat(starVal) : '';
+  return '';
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+async function submitFeedback() {
+  const feedback = getFeedbackText();
+  if (!feedback) { alert('Please enter your feedback first.'); return; }
+  if (!authToken) { logout(); return; }
+
+  const btn = document.getElementById('submit-btn');
+  const loader = document.getElementById('loader');
+  const result = document.getElementById('result');
+
+  btn.disabled = true; btn.style.display = 'none';
+  loader.style.display = 'block';
+  result.style.display  = 'none';
+
+  try {
+    const resp = await fetch(`${API}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${authToken}`,  // ← JWT token sent here
+      },
+      body: JSON.stringify({
+        feedback,
+        input_mode: currentTab,
+        language:   document.getElementById('lang-select').value,
+        sector:     document.getElementById('sector-select').value,
+      }),
+    });
+
+    if (resp.status === 401) { logout(); return; }
+    const data = await resp.json();
+    renderResult(data, feedback);
+  } catch (e) {
+    alert('Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false; btn.style.display = 'block';
+    loader.style.display = 'none';
+  }
+}
+
+// ── Render result ─────────────────────────────────────────────────────────────
+function renderResult(data, feedbackText) {
+  const result = document.getElementById('result');
+  const u = data.understanding || {};
+
+  document.getElementById('r-intent').textContent    = u.intent    || '—';
+  document.getElementById('r-sentiment').textContent = u.sentiment || '—';
+  document.getElementById('r-urgency').textContent   = u.urgency   || '—';
+  document.getElementById('r-topic').textContent     = u.topic     || '—';
+  document.getElementById('input-badge').textContent = data.input_mode || 'text';
+
+  const badge = document.getElementById('result-badge');
+  badge.textContent = data.status;
+  badge.className   = 'badge ' + data.status;
+
+  const responseBox    = document.getElementById('r-response-box');
+  const emailNotice    = document.getElementById('r-email-notice');
+  emailNotice.style.display = 'none';
+
+  if (data.status === 'replied') {
+    responseBox.innerHTML = `<div class="reply-box">${data.response || data.response_en}</div>`;
+    emailNotice.style.display = 'block';
+  } else if (data.status === 'escalated') {
+    const crmLink = data.crm_ticket_url
+      ? `<a class="crm-link" href="${data.crm_ticket_url}" target="_blank">View ticket in HubSpot →</a>`
+      : '';
+    responseBox.innerHTML = `<div class="escalate-box">${data.escalation_message || data.escalation_message_en}${crmLink}</div>`;
+    emailNotice.style.display = 'block';
+  } else {
+    responseBox.innerHTML = `<div class="escalate-box">${data.response || 'Your message was received.'}</div>`;
   }
 
-  function onLanguageChange() {
-    currentLang = document.getElementById("lang-select").value;
-    document.getElementById("lang-hint").textContent = langHints[currentLang] || langHints.en;
-    // Show Tanglish samples only for Tamil
-    document.getElementById("tanglish-samples").style.display = currentLang === "ta" ? "block" : "none";
-    document.getElementById("result").style.display = "none";
+  result.style.display = 'block';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function init() {
+  if (loadAuth()) {
+    showAppPage();
+  } else {
+    showPage('auth');
   }
-
-  function switchTab(tab, el) {
-    currentTab = tab;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".input-section").forEach(s => s.classList.remove("active"));
-    el.classList.add("active");
-    document.getElementById("tab-" + tab).classList.add("active");
-    document.getElementById("result").style.display = "none";
-  }
-
-  function setChip(el) {
-    document.getElementById("text-input").value = el.innerText;
-    voiceUsed = false;
-  }
-
-  function addEmoji(emoji) { selectedEmojis += emoji; updateEmojiPreview(); }
-  function setEmojiCombo(combo) { selectedEmojis = combo; updateEmojiPreview(); }
-  function clearEmoji() { selectedEmojis = ""; updateEmojiPreview(); }
-  function updateEmojiPreview() {
-    const el = document.getElementById("emoji-preview");
-    el.innerHTML = selectedEmojis || "<span>Click emojis above to build your feedback</span>";
-  }
-
-  function setRating(n) {
-    selectedRating = n;
-    document.querySelectorAll(".star").forEach((s, i) => s.classList.toggle("active", i < n));
-    document.getElementById("star-label").textContent = starLabels[n];
-  }
-
-  function toggleVoiceInput() {
-    if (!recognition) { alert("Voice input is not supported in this browser."); return; }
-    voiceActive ? recognition.stop() : recognition.start();
-    voiceUsed = false;
-  }
-
-  function getFeedbackValue() {
-    if (currentTab === "text") return document.getElementById("text-input").value.trim();
-    if (currentTab === "emoji") return selectedEmojis.trim();
-    const stars = "⭐".repeat(selectedRating);
-    const comment = document.getElementById("rating-comment").value.trim();
-    return comment ? `${stars} ${comment}` : stars;
-  }
-
-  async function analyze() {
-    const feedback = getFeedbackValue();
-    if (!feedback) { alert("Please enter feedback first."); return; }
-
-    document.getElementById("btn").disabled = true;
-    document.getElementById("loader").style.display = "block";
-    document.getElementById("result").style.display = "none";
-    if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); currentAudioUrl = null; }
-
-    try {
-      const res = await fetch("/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feedback,
-          input_mode: currentTab,
-          voice_transcript: currentTab === "text" && voiceUsed,
-          language: currentLang,
-          sector: currentSector
-        })
-      });
-      const data = await res.json();
-      showResult(data);
-    } catch (e) {
-      alert("Cannot connect to backend. Run: uvicorn app:app --reload --port 8000");
-    }
-
-    document.getElementById("btn").disabled = false;
-    document.getElementById("loader").style.display = "none";
-  }
-
-  function showResult(data) {
-    const understanding = data.understanding || {};
-    document.getElementById("result").style.display = "block";
-
-    // Input type badge
-    const typeMap = { text: data.voice_transcript ? "Voice to text" : "Text input", emoji: "Emoji input", mixed: "Emoji + text", rating: "Star rating" };
-    document.getElementById("input-type-badge").textContent = typeMap[data.detected_type] || "Text input";
-
-    // Language badge
-    const langBadge = document.getElementById("lang-badge");
-    if (data.target_language && data.target_language !== "en") {
-      langBadge.textContent = `🌐 ${data.language_name}`;
-      langBadge.style.display = "inline-block";
-    } else {
-      langBadge.style.display = "none";
-    }
-
-    // Tanglish badge
-    const tanglishBadge = document.getElementById("tanglish-result-badge");
-    tanglishBadge.style.display = data.tanglish_detected ? "inline-block" : "none";
-
-    // Interpretation box
-    const interp = document.getElementById("interpretation");
-    if (data.emoji_detected || data.detected_type !== "text" || data.voice_transcript || data.tanglish_detected) {
-      interp.style.display = "block";
-      let msg = `<strong>Interpreted as:</strong> "${data.human_readable}"`;
-      if (data.tanglish_detected) msg += ` <em style="color:#795548;">(Tanglish normalised)</em>`;
-      interp.innerHTML = msg;
-    } else {
-      interp.style.display = "none";
-    }
-
-    // Analysis cards
-    const sectorLabel = (understanding.sector || currentSector || "fintech").toUpperCase();
-    document.getElementById("cards").innerHTML = `
-      <div class="card"><h3>Sentiment</h3><p>${understanding.sentiment || "-"}</p></div>
-      <div class="card"><h3>Intent</h3><p>${understanding.intent || "-"}</p></div>
-      <div class="card"><h3>Topic</h3><p>${(understanding.topic || "-").replace(/_/g, " ")}</p></div>
-      <div class="card"><h3>Urgency</h3><p>${understanding.urgency || "-"}</p></div>
-      <div class="card"><h3>Severity</h3><p>${understanding.severity || "-"}</p></div>
-      <div class="card"><h3>Sector</h3><p>${sectorLabel}</p></div>
-    `;
-
-    // Badge
-    const badge = document.getElementById("badge");
-    const outputBox = document.getElementById("output-box");
-
-    if (data.status === "escalated") {
-      badge.textContent = "Escalated to Human Team";
-      badge.className = "badge escalated";
-      const caseData = data.case || {};
-      const escalMsg = data.escalation_message || "";
-      const escalMsgEN = data.escalation_message_en || "";
-      outputBox.innerHTML = `
-        <div class="escalation-box">
-          <h3>Escalation Details</h3>
-          <p><strong>Feedback:</strong> ${caseData.feedback || data.cleaned_text}</p>
-          <p><strong>Reason:</strong> ${caseData.reason || "-"}</p>
-          <p><strong>Assigned to:</strong> ${caseData.assigned_to || "human_support_team"}</p>
-          ${escalMsg ? `<div class="escalation-msg">${escalMsg}${data.target_language !== "en" && escalMsgEN ? `<div style="font-size:12px;color:#999;margin-top:6px;">${escalMsgEN}</div>` : ""}</div>` : ""}
-        </div>`;
-    } else {
-      badge.textContent = "Auto-Replied";
-      badge.className = "badge replied";
-      currentReplyEN = data.response_en || data.response;
-      const showEnToggle = data.target_language && data.target_language !== "en";
-      outputBox.innerHTML = `
-        <div class="reply-box">
-          <h3>Generated Reply ${data.target_language !== "en" ? "· " + (data.language_name || "") : ""}</h3>
-          <div class="reply-translated">${(data.response || "").replace(/\n/g, "<br>")}</div>
-          ${showEnToggle ? `<button class="show-en-btn" onclick="toggleEN(this)">Show English original</button>
-          <div class="reply-en" id="reply-en-text">${(data.response_en || "").replace(/\n/g, "<br>")}</div>` : ""}
-          <div class="audio-tools">
-            <button class="audio-btn" id="audio-btn" onclick="playReplyAudio()" ${data.audio_supported ? "" : "disabled"}>
-              ${data.audio_supported ? "▶ Play Audio" : "Audio Unavailable"}
-            </button>
-            <span class="audio-status" id="audio-status">
-              ${data.audio_supported ? `Spoken reply in ${data.language_name || "English"}.` : "Install gTTS to enable audio."}
-            </span>
-          </div>
-          <audio id="reply-audio" controls style="display:none; width:100%; margin-top:12px;"></audio>
-        </div>`;
-    }
-  }
-
-  function toggleEN(btn) {
-    const el = document.getElementById("reply-en-text");
-    const showing = el.classList.toggle("show");
-    btn.textContent = showing ? "Hide English original" : "Show English original";
-  }
-
-  async function playReplyAudio() {
-    const replyText = document.querySelector(".reply-translated")?.textContent?.trim();
-    if (!replyText) return;
-    const button = document.getElementById("audio-btn");
-    const status = document.getElementById("audio-status");
-    const player = document.getElementById("reply-audio");
-    button.disabled = true;
-    status.textContent = "Generating audio...";
-    try {
-      const res = await fetch("/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: replyText, language: currentLang })
-      });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Audio error"); }
-      const blob = await res.blob();
-      if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
-      currentAudioUrl = URL.createObjectURL(blob);
-      player.src = currentAudioUrl;
-      player.style.display = "block";
-      await player.play();
-      status.textContent = "Playing reply.";
-    } catch (err) {
-      status.textContent = err.message || "Unable to generate audio.";
-    } finally {
-      button.disabled = false;
-    }
-  }
+})();
 </script>
 </body>
 </html>

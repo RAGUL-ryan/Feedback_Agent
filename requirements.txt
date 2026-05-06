@@ -12,3 +12,11 @@ pypdf
 gTTS
 deep-translator
 langsmith
+
+# ── Approach 2: Auth + DB + Email ──────────────────────────────────────────
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+requests
+email-validator

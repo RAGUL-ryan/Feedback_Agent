@@ -15,11 +15,13 @@ v7 changes — Agent-driven CRM + email gating:
 """
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+#from langchain_groq import ChatGroq
 from config import MODEL_NAME, SECTOR
 
-_llm = ChatGroq(model=MODEL_NAME, temperature=0)
+#_llm = ChatGroq(model=MODEL_NAME, temperature=0)
 
+from langchain_openai import ChatOpenAI
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
 _SECTOR_ROLE = {
     "fintech":    "fintech customer support team",
     "education":  "education support team",

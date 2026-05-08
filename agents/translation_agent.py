@@ -39,9 +39,9 @@ from __future__ import annotations
 import re as _re
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_groq import ChatGroq
+#from langchain_groq import ChatGroq
 from config import MODEL_NAME
-
+from langchain_openai import ChatOpenAI
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Language metadata  (pure lookup, no LLM needed)
@@ -158,8 +158,9 @@ def normalize_to_english(normalized_text: str, original_language: str) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _DETECT_TOOLS = [detect_language, normalize_to_english]
-_detect_llm = ChatGroq(model=MODEL_NAME, temperature=0).bind_tools(_DETECT_TOOLS)
+#_detect_llm = ChatGroq(model=MODEL_NAME, temperature=0).bind_tools(_DETECT_TOOLS)
 
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
 _DETECT_SYSTEM = """You are a multilingual language detection and normalization agent.
 
 Step 1: Identify the language or dialect of the user's feedback.

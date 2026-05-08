@@ -14,9 +14,9 @@ from __future__ import annotations
 from typing import Any, Dict
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_groq import ChatGroq
+#from langchain_groq import ChatGroq
 from config import MODEL_NAME, SECTOR
-
+from langchain_openai import ChatOpenAI
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tools  (narrow, deterministic — LLM decides when to call each)
@@ -265,8 +265,10 @@ TOOLS = [
     set_needs_human_review,
 ]
 
-_llm = ChatGroq(model=MODEL_NAME, temperature=0).bind_tools(TOOLS)
+#_llm = ChatGroq(model=MODEL_NAME, temperature=0).bind_tools(TOOLS)
 
+
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
 
 def apply_edge_case_rules(
     raw_feedback: str,

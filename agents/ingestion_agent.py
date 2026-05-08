@@ -13,10 +13,11 @@ Improvements over original:
 import json
 import re
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
-from config import MODEL_NAME
 
-_llm = ChatGroq(model=MODEL_NAME, temperature=0)
+from config import MODEL_NAME
+from langchain_openai import ChatOpenAI
+
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
 
 _SYSTEM = """You are a feedback ingestion agent for a customer support system.
 

@@ -11,11 +11,12 @@ v3 changes:
 """
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+#from langchain_groq import ChatGroq
 from config import MODEL_NAME, SECTOR
 
-_llm = ChatGroq(model=MODEL_NAME, temperature=0.4)
-
+#_llm = ChatGroq(model=MODEL_NAME, temperature=0.4)
+from langchain_openai import ChatOpenAI
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
 # Sector-specific tone and content guidance injected into the system prompt
 _SECTOR_GUIDANCE = {
     "fintech": (

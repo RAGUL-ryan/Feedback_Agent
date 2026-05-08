@@ -18,10 +18,12 @@ Key changes v3:
 import json
 import re
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+#from langchain_groq import ChatGroq
 from config import MODEL_NAME, SECTOR          # Add SECTOR = "fintech" to config.py
 
-_llm = ChatGroq(model=MODEL_NAME, temperature=0)
+from langchain_openai import ChatOpenAI
+_llm = ChatOpenAI(model=MODEL_NAME, temperature=0)
+#_llm = ChatGroq(model=MODEL_NAME, temperature=0)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sector taxonomy definitions

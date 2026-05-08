@@ -4,8 +4,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 KNOWLEDGE_BASE_DIR = "./data/knowledge_base"
-GROQ_API_KEY       = os.getenv("GROQ_API_KEY")
-MODEL_NAME         = "llama-3.3-70b-versatile"
+#GROQ_API_KEY       = os.getenv("GROQ_API_KEY")
+#MODEL_NAME         = "llama-3.3-70b-versatile"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL_NAME     = "gpt-4o-mini" 
 SECTOR             = "fintech"
 EMBEDDING_MODEL    = "text-embedding-3-small"
 CHROMA_PERSIST_DIR = "./chroma_db"

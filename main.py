@@ -1,11 +1,18 @@
 """
-main.py  (replace your existing main.py)
+main.py
 ─────────────────────────────────────────────────────────────────────────────
-v5 changes (Approach 2 — authenticated users):
-  • run_feedback_pipeline() accepts customer_name, customer_email, customer_phone
-  • These come from the JWT token (decoded in app.py) — not from the form
-  • Passed down to escalate() → crm_agent and email_agent
-  • Auto-replied cases also log to CRM + send reply email (background thread)
+v7 changes — Agent-driven CRM + email gating:
+
+  decision_agent now returns one of THREE routes:
+    'respond'              → AI auto-reply (unchanged)
+    'escalate'             → human review, inline acknowledgment only
+    'escalate_with_ticket' → human review + CRM ticket + customer email
+
+  main.py passes create_ticket=True to escalation_agent only when the
+  decision_agent returned 'escalate_with_ticket'. No other logic change.
+
+  The decision of whether a ticket is warranted lives entirely in
+  decision_agent.py. main.py is purely a router.
 """
 
 import threading
@@ -32,42 +39,6 @@ def _learn_async(cleaned: str, reply_en: str, outcome: str = "auto_resolved"):
         learn(cleaned, reply_en, outcome=outcome)
     except Exception as exc:
         print(f"[LEARNING] Background store failed: {exc}")
-
-
-def _crm_and_email_reply(
-    feedback: str,
-    analysis: dict,
-    reply_en: str,
-    customer_name: str,
-    customer_email: str,
-    customer_phone: str,
-):
-    """Fire-and-forget: log auto-replied case to CRM + send reply email."""
-    try:
-        from agents.crm_agent import create_ticket
-        create_ticket(
-            feedback       = feedback,
-            analysis       = analysis,
-            status         = "replied",
-            reply          = reply_en,
-            customer_name  = customer_name,
-            customer_email = customer_email,
-            customer_phone = customer_phone,
-        )
-    except Exception as exc:
-        print(f"[CRM] Auto-reply log failed (non-fatal): {exc}")
-
-    try:
-        from agents.email_agent import send_reply_email
-        if customer_email:
-            send_reply_email(
-                customer_email = customer_email,
-                customer_name  = customer_name,
-                ai_reply       = reply_en,
-                feedback       = feedback,
-            )
-    except Exception as exc:
-        print(f"[EMAIL] Reply email failed (non-fatal): {exc}")
 
 
 def run_feedback_pipeline(
@@ -107,9 +78,11 @@ def run_feedback_pipeline(
     if not normalised_feedback or not normalised_feedback.strip():
         reject_msg = "It looks like your message was empty. Please describe your issue and we will help you."
         return {
-            "status": "rejected", "response": reject_msg,
-            "response_en": reject_msg, "original_input": raw_feedback,
-            "reason": "empty_input",
+            "status":         "rejected",
+            "response":       reject_msg,
+            "response_en":    reject_msg,
+            "original_input": raw_feedback,
+            "reason":         "empty_input",
         }
 
     # ── Stage C: edge_case ║ get_context (parallel) ───────────────────────────
@@ -124,16 +97,19 @@ def run_feedback_pipeline(
     if analysis.get("instant_reject"):
         reject_msg = analysis.get("reject_message", "Please provide your feedback and we will help you.")
         return {
-            "status": "rejected", "response": reject_msg,
-            "response_en": reject_msg, "original_input": raw_feedback,
-            "reason": "empty_input",
+            "status":         "rejected",
+            "response":       reject_msg,
+            "response_en":    reject_msg,
+            "original_input": raw_feedback,
+            "reason":         "empty_input",
         }
 
     human_readable = analysis.get("human_readable", cleaned)
     emoji_detected = analysis.get("emoji_detected", False)
 
-    # ── Stage D: Routing decision ─────────────────────────────────────────────
+    # ── Stage D: Routing decision (respond / escalate / escalate_with_ticket) ─
     route = decide(analysis)
+    print(f"[Pipeline] Route decision: {route}")
 
     base_payload = {
         "understanding":     analysis,
@@ -149,6 +125,7 @@ def run_feedback_pipeline(
         "language_name":     get_language_name(target_language),
         "sector":            effective_sector,
         "customer_name":     customer_name,
+        "route":             route,
     }
 
     # ── Stage E: Auto-respond ─────────────────────────────────────────────────
@@ -164,13 +141,10 @@ def run_feedback_pipeline(
         print(f"[Response EN] {reply_en}")
         reply_translated = translate_text(reply_en, target_language)
 
-        analysis_snapshot = {**analysis, "sector": effective_sector}
-
-        # Background: learn + CRM log + reply email
-        threading.Thread(target=_learn_async, args=(cleaned, reply_en), daemon=True).start()
+        # Background: store to RAG for future improvements
         threading.Thread(
-            target=_crm_and_email_reply,
-            args=(cleaned, analysis_snapshot, reply_en, customer_name, customer_email, customer_phone),
+            target=_learn_async,
+            args=(cleaned, reply_en),
             daemon=True,
         ).start()
 
@@ -181,30 +155,32 @@ def run_feedback_pipeline(
             **base_payload,
         }
 
-    # ── Stage E: Escalate ─────────────────────────────────────────────────────
+    # ── Stage E: Escalate (with or without CRM ticket) ───────────────────────
     else:
+        # decision_agent returns 'escalate_with_ticket' when a formal ticket
+        # and customer email notification are warranted. Otherwise 'escalate'.
+        create_ticket = (route == "escalate_with_ticket")
+
         case = escalate(
             feedback       = cleaned,
             understanding  = analysis,
+            create_ticket  = create_ticket,
             sector         = effective_sector,
             customer_name  = customer_name,
             customer_email = customer_email,
             customer_phone = customer_phone,
         )
 
-        escalation_message_en = (
-            "Your feedback has been escalated to our human support team. "
-            "They will review your case and contact you shortly. "
-            f"A confirmation email has been sent to {customer_email or 'you'}."
-        )
-        escalation_message = translate_text(escalation_message_en, target_language)
+        ack_en         = case.get("acknowledgment", "We've received your feedback and will look into it shortly.")
+        ack_translated = translate_text(ack_en, target_language)
 
         return {
-            "status":                "escalated",
-            "case":                  case,
-            "escalation_message":    escalation_message,
-            "escalation_message_en": escalation_message_en,
-            "crm_ticket_id":         case.get("crm_ticket_id"),
-            "crm_ticket_url":        case.get("crm_ticket_url"),
+            "status":         "escalated",
+            "response":       ack_translated,
+            "response_en":    ack_en,
+            "ticket_created": create_ticket,
+            "crm":            case.get("crm", {}),
+            "email":          case.get("email", {}),
+            "case":           case,
             **base_payload,
         }

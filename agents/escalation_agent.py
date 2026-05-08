@@ -1,11 +1,17 @@
 """
-agents/escalation_agent.py  (replace your existing escalation_agent.py)
+agents/escalation_agent.py
 ─────────────────────────────────────────────────────────────────────────────
-v5 changes (Approach 2 — authenticated users):
-  • escalate() accepts customer_name, customer_email, customer_phone
-  • Passes customer details to crm_agent (Contact linked to ticket)
-  • Passes customer details to email_agent (auto escalation email sent)
-  • All external calls wrapped in try/except — nothing crashes the pipeline
+v7 changes — Agent-driven CRM + email gating:
+
+  The `escalate()` function now accepts a `create_ticket` boolean flag
+  that is set by the decision_agent (via main.py).
+
+  When create_ticket=True  → crm_agent creates a HubSpot ticket and
+                              email_agent sends a customer notification.
+  When create_ticket=False → inline acknowledgment only (previous v6 behaviour).
+
+  Nothing about *which* cases get tickets is hardcoded here.
+  The decision_agent owns that logic entirely.
 """
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -22,7 +28,8 @@ _SECTOR_ROLE = {
     "ecommerce":  "ecommerce customer support team",
 }
 
-_SYSTEM_TEMPLATE = """You are a customer support escalation coordinator for a {sector_role}.
+# ── Handoff note (internal — not shown to customer) ──────────────────────────
+_HANDOFF_SYSTEM = """You are a customer support escalation coordinator for a {sector_role}.
 
 Write a concise escalation handoff note for the human support agent.
 Include:
@@ -36,7 +43,7 @@ Rules:
   • Do not mention AI confidence scores or internal system labels.
   • Use domain-appropriate language for {sector}."""
 
-_HUMAN = """Customer feedback: {feedback}
+_HANDOFF_HUMAN = """Customer feedback: {feedback}
 Intent: {intent} | Topic: {topic} | Severity: {severity} | Urgency: {urgency}
 Escalation reason: {reason}
 Edge cases: {edge_cases}
@@ -44,28 +51,82 @@ Summary: {human_readable}
 
 Write the handoff note:"""
 
+# ── Customer-facing acknowledgment (shown in UI) ──────────────────────────────
+_ACK_SYSTEM = """You are a warm, empathetic customer support representative for a {sector_role}.
+
+Write a personal acknowledgment reply shown directly to the customer in the app UI —
+exactly like how a host replies to a guest review on Airbnb.
+
+The customer left negative or complex feedback. Your reply must:
+  1. Address the customer by first name (use {customer_name})
+  2. Acknowledge their specific concern genuinely — do not be dismissive
+  3. Take appropriate ownership (even if the issue has an explanation)
+  4. Tell them what happens next in one clear sentence
+  5. End on a warm, constructive note
+
+Rules:
+  • 3–4 sentences maximum.
+  • Natural, human tone — not robotic corporate language.
+  • Do NOT use vague phrases like "our team will reach out". Be specific about next step.
+  • If a ticket was created, you MAY reference that a case reference has been created
+    for tracking — but do NOT invent a ticket number; leave that to the email.
+  • If no ticket was created, do NOT mention emails, tickets, or reference numbers.
+  • Do NOT reveal internal system details (confidence scores, edge case flags).
+  • Use domain-appropriate language for {sector}."""
+
+_ACK_HUMAN = """Customer feedback: {feedback}
+What they mean: {human_readable}
+Intent: {intent} | Topic: {topic} | Severity: {severity} | Urgency: {urgency}
+Customer first name: {customer_name}
+Formal ticket created: {ticket_created}
+
+Write the acknowledgment reply shown in the UI:"""
+
 
 def escalate(
     feedback: str,
     understanding: dict,
+    create_ticket: bool = False,
     sector: str | None = None,
-    customer_name: str = "Unknown",
+    customer_name: str = "there",
     customer_email: str = "",
     customer_phone: str = "",
 ) -> dict:
+    """
+    Generate escalation outputs.
+
+    Args:
+        feedback       : cleaned customer feedback text
+        understanding  : full analysis dict from the pipeline
+        create_ticket  : if True, create CRM ticket + send email notification.
+                         Set by decision_agent — NOT hardcoded here.
+        sector         : optional sector override
+        customer_name  : from JWT token
+        customer_email : from JWT token
+        customer_phone : from JWT token
+
+    Returns:
+        dict with status, acknowledgment, handoff_note, crm/email results, etc.
+    """
     effective_sector = (sector or understanding.get("sector") or SECTOR or "fintech").lower()
-    sector_role = _SECTOR_ROLE.get(effective_sector, "customer support team")
+    sector_role      = _SECTOR_ROLE.get(effective_sector, "customer support team")
 
     edge_cases = understanding.get("edge_cases", [])
     reason = (
         understanding.get("review_reason")
-        or f"urgency={understanding.get('urgency')} severity={understanding.get('severity')} confidence={understanding.get('confidence')}"
+        or f"urgency={understanding.get('urgency')} severity={understanding.get('severity')} "
+           f"confidence={understanding.get('confidence')}"
     )
 
-    system_msg = _SYSTEM_TEMPLATE.format(sector=effective_sector, sector_role=sector_role)
-    prompt = ChatPromptTemplate.from_messages([("system", system_msg), ("human", _HUMAN)])
+    first_name = (customer_name or "there").split()[0]
 
-    handoff_note = (prompt | _llm).invoke({
+    # ── Generate internal handoff note ────────────────────────────────────────
+    handoff_system = _HANDOFF_SYSTEM.format(sector=effective_sector, sector_role=sector_role)
+    handoff_prompt = ChatPromptTemplate.from_messages([
+        ("system", handoff_system),
+        ("human", _HANDOFF_HUMAN),
+    ])
+    handoff_note = (handoff_prompt | _llm).invoke({
         "feedback":       feedback,
         "intent":         understanding.get("intent", "unknown"),
         "topic":          understanding.get("topic", "general"),
@@ -76,59 +137,88 @@ def escalate(
         "human_readable": understanding.get("human_readable", feedback),
     }).content.strip()
 
-    case = {
-        "status":          "escalated",
-        "feedback":        feedback,
-        "handoff_note":    handoff_note,
-        "reason":          reason,
-        "intent":          understanding.get("intent"),
-        "sentiment":       understanding.get("sentiment"),
-        "topic":           understanding.get("topic", "general"),
-        "severity":        understanding.get("severity"),
-        "urgency":         understanding.get("urgency"),
-        "confidence":      understanding.get("confidence"),
-        "edge_cases":      edge_cases,
-        "sector":          effective_sector,
-        "assigned_to":     "human_support_team",
-        "customer_name":   customer_name,
-        "customer_email":  customer_email,
-    }
+    # ── Generate customer-facing acknowledgment ───────────────────────────────
+    ack_system = _ACK_SYSTEM.format(
+        sector=effective_sector,
+        sector_role=sector_role,
+        customer_name=first_name,
+    )
+    ack_prompt = ChatPromptTemplate.from_messages([
+        ("system", ack_system),
+        ("human", _ACK_HUMAN),
+    ])
+    acknowledgment = (ack_prompt | _llm).invoke({
+        "feedback":       feedback,
+        "human_readable": understanding.get("human_readable", feedback),
+        "intent":         understanding.get("intent", "unknown"),
+        "topic":          understanding.get("topic", "general"),
+        "severity":       understanding.get("severity", "unknown"),
+        "urgency":        understanding.get("urgency", "unknown"),
+        "customer_name":  first_name,
+        "ticket_created": "yes" if create_ticket else "no",
+    }).content.strip()
 
-    print(f"[ESCALATION] {handoff_note}")
+    print(f"[ESCALATION] Handoff note: {handoff_note}")
+    print(f"[ESCALATION] Acknowledgment shown to customer: {acknowledgment}")
+    print(f"[ESCALATION] CRM ticket requested: {create_ticket}")
 
-    # ── CRM: create ticket + contact in HubSpot ───────────────────────────
-    try:
-        from agents.crm_agent import create_ticket
-        crm_result = create_ticket(
-            feedback       = feedback,
-            analysis       = {**understanding, "sector": effective_sector},
-            status         = "escalated",
-            handoff_note   = handoff_note,
-            customer_name  = customer_name,
-            customer_email = customer_email,
-            customer_phone = customer_phone,
-        )
-        case["crm_ticket_id"]  = crm_result.get("ticket_id")
-        case["crm_ticket_url"] = crm_result.get("ticket_url")
-        case["crm_status"]     = crm_result.get("crm_status")
-    except Exception as exc:
-        print(f"[CRM] Failed (non-fatal): {exc}")
-        case["crm_ticket_id"]  = None
-        case["crm_ticket_url"] = None
-        case["crm_status"]     = "error"
+    crm_result   = {"crm_status": "skipped", "reason": "not_required_by_agent"}
+    email_result = {"email_status": "skipped", "reason": "not_required_by_agent"}
 
-    # ── Email: notify customer that their case was escalated ──────────────
-    try:
-        from agents.email_agent import send_escalation_email
-        if customer_email:
-            send_escalation_email(
-                customer_email = customer_email,
-                customer_name  = customer_name,
-                ticket_id      = case.get("crm_ticket_id") or "N/A",
+    # ── Conditionally create CRM ticket + send email ──────────────────────────
+    if create_ticket:
+        try:
+            from agents.crm_agent import create_ticket as crm_create_ticket
+            crm_result = crm_create_ticket(
                 feedback       = feedback,
-                sector         = effective_sector,
+                analysis       = understanding,
+                status         = "escalated",
+                handoff_note   = handoff_note,
+                reply          = "",
+                customer_name  = customer_name,
+                customer_email = customer_email,
+                customer_phone = customer_phone,
             )
-    except Exception as exc:
-        print(f"[EMAIL] Failed (non-fatal): {exc}")
+            print(f"[ESCALATION] CRM result: {crm_result}")
+        except Exception as exc:
+            print(f"[ESCALATION] CRM creation failed (non-fatal): {exc}")
+            crm_result = {"crm_status": "error", "reason": str(exc)}
 
-    return case
+        if customer_email:
+            try:
+                from agents.email_agent import send_escalation_email
+                ticket_id = crm_result.get("ticket_id", "N/A")
+                sent = send_escalation_email(
+                    customer_email = customer_email,
+                    customer_name  = customer_name,
+                    ticket_id      = ticket_id,
+                    feedback       = feedback,
+                    sector         = effective_sector,
+                )
+                email_result = {"email_status": "sent" if sent else "failed"}
+                print(f"[ESCALATION] Email result: {email_result}")
+            except Exception as exc:
+                print(f"[ESCALATION] Email send failed (non-fatal): {exc}")
+                email_result = {"email_status": "error", "reason": str(exc)}
+
+    return {
+        "status":         "escalated",
+        "feedback":       feedback,
+        "handoff_note":   handoff_note,
+        "acknowledgment": acknowledgment,
+        "reason":         reason,
+        "intent":         understanding.get("intent"),
+        "sentiment":      understanding.get("sentiment"),
+        "topic":          understanding.get("topic", "general"),
+        "severity":       understanding.get("severity"),
+        "urgency":        understanding.get("urgency"),
+        "confidence":     understanding.get("confidence"),
+        "edge_cases":     edge_cases,
+        "sector":         effective_sector,
+        "assigned_to":    "human_support_team",
+        "customer_name":  customer_name,
+        "customer_email": customer_email,
+        "ticket_created": create_ticket,
+        "crm":            crm_result,
+        "email":          email_result,
+    }

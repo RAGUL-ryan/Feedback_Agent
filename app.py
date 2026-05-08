@@ -1,11 +1,11 @@
 """
-app.py  (replace your existing app.py)
+app.py
 ─────────────────────────────────────────────────────────────────────────────
-v5 changes (Approach 2 — authenticated users):
-  • Auth router mounted at /auth  (register, login, me)
-  • /analyze is now a protected route — requires Bearer token
-  • Customer name, email, phone extracted from JWT token automatically
-  • Tables created on startup (SQLite file created if not exists)
+v6 changes — Inline response mode (no CRM, no email):
+  • Removed: email_agent and crm_agent imports (those files can be deleted)
+  • /analyze response is now simpler — both 'replied' and 'escalated' return
+    a `response` field that the UI renders directly in the feedback card.
+  • Everything else (auth, JWT, TTS, language, sector) is unchanged.
 """
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -71,12 +71,12 @@ def get_languages():
 @app.post("/analyze")
 def analyze(
     request: FeedbackRequest,
-    current_user=Depends(get_current_user),   # ← extracts user from JWT token
+    current_user=Depends(get_current_user),
 ):
     """
-    Process customer feedback.
-    Requires Authorization: Bearer <token> header.
-    Customer details (name, email, phone) come from the token — not the request body.
+    Process customer feedback and return an inline response.
+    Both 'replied' and 'escalated' statuses return a `response` field
+    that is displayed directly in the UI.
     """
     lang = request.language if request.language in supported_language_codes() else "en"
 
@@ -84,12 +84,12 @@ def analyze(
         raw_feedback    = request.feedback,
         target_language = lang,
         sector          = request.sector,
-        customer_name   = current_user.full_name,     # from JWT
-        customer_email  = current_user.email,          # from JWT
-        customer_phone  = current_user.phone or "",    # from JWT
+        customer_name   = current_user.full_name,
+        customer_email  = current_user.email,
+        customer_phone  = current_user.phone or "",
     )
 
-    result["input_mode"]     = request.input_mode or "text"
+    result["input_mode"]       = request.input_mode or "text"
     result["voice_transcript"] = request.voice_transcript
     result["audio_supported"]  = gtts_available()
     return result

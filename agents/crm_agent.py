@@ -1,13 +1,13 @@
 """
-agents/crm_agent.py  (replace your existing crm_agent.py)
+agents/crm_agent.py
 ─────────────────────────────────────────────────────────────────────────────
 CRM integration agent — HubSpot (FREE tier).
 
-v2 changes (Approach 2 — authenticated users):
-  • create_ticket() now accepts customer_name, customer_email, customer_phone
-  • Creates a HubSpot Contact first, then links it to the ticket
-  • Support agent can click the contact's email/phone directly from the ticket
-  • If contact already exists (same email), HubSpot returns the existing one — no duplicate
+v3 changes (unchanged from v2 functionally):
+  This file has NO routing logic. It does exactly one thing: create a ticket
+  and link a contact. Whether to call this at all is decided upstream by
+  decision_agent (via escalation_agent). Nothing here is hardcoded about
+  which feedback types trigger a ticket.
 
 HubSpot free tier includes:
   ✓ Unlimited tickets + contacts
@@ -62,7 +62,6 @@ def _get_or_create_contact(
     """
     Find existing HubSpot contact by email or create a new one.
     Returns the HubSpot contact ID (string), or None on failure.
-
     HubSpot automatically deduplicates by email — safe to call every time.
     """
     if not email:
@@ -71,17 +70,16 @@ def _get_or_create_contact(
     first, *rest = name.strip().split(" ", 1)
     last = rest[0] if rest else ""
 
-    # Try to create — if email already exists HubSpot returns 409 CONFLICT
     try:
         resp = requests.post(
             f"{HUBSPOT_BASE}/crm/v3/objects/contacts",
             headers=_headers(),
             json={
                 "properties": {
-                    "email":      email,
-                    "firstname":  first,
-                    "lastname":   last,
-                    "phone":      phone or "",
+                    "email":     email,
+                    "firstname": first,
+                    "lastname":  last,
+                    "phone":     phone or "",
                 }
             },
             timeout=10,
@@ -93,7 +91,6 @@ def _get_or_create_contact(
             return contact_id
 
         if resp.status_code == 409:
-            # Contact already exists — search for their ID
             search = requests.post(
                 f"{HUBSPOT_BASE}/crm/v3/objects/contacts/search",
                 headers=_headers(),
@@ -191,6 +188,8 @@ def create_ticket(
 ) -> dict:
     """
     Create a HubSpot ticket and link it to a Contact (the customer).
+    This function is called ONLY when the decision_agent determined a ticket
+    is warranted. It does not make that judgment itself.
 
     Args:
         feedback       : cleaned customer feedback text
@@ -198,9 +197,9 @@ def create_ticket(
         status         : 'escalated' | 'replied'
         handoff_note   : handoff note (escalated cases)
         reply          : AI reply text (replied cases)
-        customer_name  : from JWT token (logged-in user's full name)
-        customer_email : from JWT token (logged-in user's email)
-        customer_phone : from JWT token (logged-in user's phone)
+        customer_name  : from JWT token
+        customer_email : from JWT token
+        customer_phone : from JWT token
 
     Returns:
         dict with crm_status, ticket_id, ticket_url
@@ -222,7 +221,7 @@ def create_ticket(
     )
 
     try:
-        # ── Step 1: Create the ticket ─────────────────────────────────────
+        # ── Step 1: Create the ticket ─────────────────────────────────────────
         resp = requests.post(
             f"{HUBSPOT_BASE}/crm/v3/objects/tickets",
             headers=_headers(),
@@ -243,7 +242,7 @@ def create_ticket(
         ticket_url = f"https://app.hubspot.com/contacts/tickets/{ticket_id}"
         print(f"[CRM] ✓ Ticket created → {ticket_url}")
 
-        # ── Step 2: Create/find Contact and link to ticket ────────────────
+        # ── Step 2: Create/find Contact and link to ticket ────────────────────
         if customer_email:
             contact_id = _get_or_create_contact(
                 customer_email, customer_name, customer_phone

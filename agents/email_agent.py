@@ -3,6 +3,11 @@ agents/email_agent.py  (Gmail SMTP version — no SendGrid needed)
 ─────────────────────────────────────────────────────────────────────────────
 Sends emails using Gmail free SMTP. No sign up, no admin, no credit card.
 
+v2 note:
+  This file has NO routing logic. It sends an email when called — period.
+  Whether to call it is decided upstream by decision_agent (via escalation_agent).
+  Nothing here is hardcoded about which feedback types trigger an email.
+
 Setup (5 minutes):
   1. myaccount.google.com → Security → enable 2-Step Verification
   2. Security → App passwords → Create → name: "Feedback Agent"
